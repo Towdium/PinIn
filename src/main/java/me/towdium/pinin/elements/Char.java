@@ -1,7 +1,7 @@
 package me.towdium.pinin.elements;
 
 
-import me.towdium.pinin.utils.Cache;
+import me.towdium.pinin.PinIn;
 import me.towdium.pinin.utils.IndexSet;
 import me.towdium.pinin.utils.Matcher;
 
@@ -13,22 +13,18 @@ import java.util.Arrays;
  * Date: 29/04/19
  */
 public class Char implements Element {
-    private static Cache<Character, Char> cache = new Cache<>(Char::new);
+
 
     private Element[] patterns = new Element[0];
 
-    private Char(char ch) {
+    public Char(char ch, PinIn p) {
         ArrayList<Element> list = new ArrayList<>();
         list.add(new Raw(ch));
         if (Matcher.isChinese(ch)) {
-            Pinyin[] pinyin = Pinyin.get(ch);
+            Pinyin[] pinyin = Pinyin.get(ch, p);
             list.addAll(Arrays.asList(pinyin));
         }
         patterns = list.toArray(patterns);
-    }
-
-    public static Char get(char ch) {
-        return cache.get(ch);
     }
 
     @Override

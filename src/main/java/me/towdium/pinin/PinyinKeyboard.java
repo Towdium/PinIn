@@ -2,7 +2,7 @@ package me.towdium.pinin;
 
 import java.util.HashMap;
 
-public enum PinyinSpell {
+public enum PinyinKeyboard {
 
     QUANPIN, DAQIAN;
 

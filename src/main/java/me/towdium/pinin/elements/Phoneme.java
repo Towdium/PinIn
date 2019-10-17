@@ -1,7 +1,6 @@
 package me.towdium.pinin.elements;
 
 import me.towdium.pinin.PinIn;
-import me.towdium.pinin.utils.Cache;
 import me.towdium.pinin.utils.IndexSet;
 
 import java.util.Collections;
@@ -9,9 +8,7 @@ import java.util.HashSet;
 
 import static me.towdium.pinin.utils.Matcher.strCmp;
 
-public class Phoneme {
-    private static Cache<String, Phoneme> cache = new Cache<>(Phoneme::new);
-
+public class Phoneme implements Element {
     String[] strs;
 
     @Override
@@ -19,47 +16,47 @@ public class Phoneme {
         return strs[0];
     }
 
-    public Phoneme(String str) {
+    public Phoneme(String str, PinIn p) {
         HashSet<String> ret = new HashSet<>();
         ret.add(str);
 
-        if (PinIn.enableFuzzyCh2c && str.startsWith("c")) Collections.addAll(ret, "c", "ch");
-        if (PinIn.enableFuzzySh2s && str.startsWith("s")) Collections.addAll(ret, "s", "sh");
-        if (PinIn.enableFuzzyZh2z && str.startsWith("z")) Collections.addAll(ret, "z", "zh");
-        if (PinIn.enableFuzzyU2v && str.startsWith("v"))
+        if (p.fCh2C && str.startsWith("c")) Collections.addAll(ret, "c", "ch");
+        if (p.fSh2S && str.startsWith("s")) Collections.addAll(ret, "s", "sh");
+        if (p.fZh2Z && str.startsWith("z")) Collections.addAll(ret, "z", "zh");
+        if (p.fU2V && str.startsWith("v"))
             ret.add("u" + str.substring(1));
-        if ((PinIn.enableFuzzyAng2an && str.endsWith("ang"))
-                || (PinIn.enableFuzzyEng2en && str.endsWith("eng"))
-                || (PinIn.enableFuzzyIng2in && str.endsWith("ing")))
+        if ((p.fAng2An && str.endsWith("ang"))
+                || (p.fEng2En && str.endsWith("eng"))
+                || (p.fIng2In && str.endsWith("ing")))
             ret.add(str.substring(0, str.length() - 1));
-        if ((PinIn.enableFuzzyAng2an && str.endsWith("an"))
-                || (str.endsWith("en") && PinIn.enableFuzzyEng2en)
-                || (str.endsWith("in") && PinIn.enableFuzzyIng2in))
+        if ((p.fAng2An && str.endsWith("an"))
+                || (p.fEng2En && str.endsWith("en"))
+                || (p.fIng2In && str.endsWith("in")))
             ret.add(str + 'g');
-        strs = ret.stream().map(PinIn.getKeyboard()::keys).toArray(String[]::new);
+        strs = ret.stream().map(p.keyboard::keys).toArray(String[]::new);
     }
 
-    public static Phoneme get(String str) {
-        return cache.get(str);
-    }
-
-    public static void refresh() {
-        cache.clear();
-    }
-
-    IndexSet match(String source, IndexSet idx, int start) {
+    public IndexSet match(String source, IndexSet idx, int start) {
         if (strs.length == 1 && strs[0].isEmpty()) return new IndexSet(idx);
-        else {
-            IndexSet ret = new IndexSet();
-            idx.foreach(i -> {
-                for (String str : strs) {
-                    int size = strCmp(source, str, i + start);
-                    if (i + start + size == source.length()) ret.set(i + size);  // ending match
-                    else if (size == str.length()) ret.set(i + size); // full match
-                }
-                return true;
-            });
-            return ret;
+        IndexSet ret = new IndexSet();
+        idx.traverse(i -> {
+            IndexSet is = match(source, start + i);
+            is.offset(i);
+            ret.merge(is);
+            return true;
+        });
+        return ret;
+    }
+
+    @Override
+    public IndexSet match(String source, int start) {
+        IndexSet ret = new IndexSet();
+        if (strs.length == 1 && strs[0].isEmpty()) return ret;
+        for (String str : strs) {
+            int size = strCmp(source, str, start);
+            if (start + size == source.length()) ret.set(size);  // ending match
+            else if (size == str.length()) ret.set(size); // full match
         }
+        return ret;
     }
 }

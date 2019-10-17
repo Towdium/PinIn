@@ -1,5 +1,6 @@
 package me.towdium.pinin.utils;
 
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class IndexSet {
@@ -33,7 +34,7 @@ public class IndexSet {
         value = value == 0x1 ? s.value : (value |= s.value);
     }
 
-    public boolean foreach(Predicate<Integer> p) {
+    public boolean traverse(Predicate<Integer> p) {
         int v = value;
         for (int i = 0; i < 7; i++) {
             if ((v & 0x1) == 0x1 && !p.test(i)) return false;
@@ -42,10 +43,22 @@ public class IndexSet {
         return true;
     }
 
+    public void foreach(Consumer<Integer> c) {
+        int v = value;
+        for (int i = 0; i < 7; i++) {
+            if ((v & 0x1) == 0x1) c.accept(i);
+            v >>= 1;
+        }
+    }
+
+    public void offset(int i) {
+        value <<= i;
+    }
+
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        foreach(i -> {
+        traverse(i -> {
             builder.append(i);
             builder.append(", ");
             return true;

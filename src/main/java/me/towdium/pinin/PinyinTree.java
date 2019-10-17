@@ -2,38 +2,36 @@ package me.towdium.pinin;
 
 import it.unimi.dsi.fastutil.chars.*;
 import it.unimi.dsi.fastutil.ints.IntArraySet;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
-import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import me.towdium.pinin.elements.Char;
+import it.unimi.dsi.fastutil.objects.*;
+import me.towdium.pinin.elements.Phoneme;
 import me.towdium.pinin.elements.Pinyin;
+import me.towdium.pinin.utils.IndexSet;
 import me.towdium.pinin.utils.Matcher;
 
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
 
 /**
  * Author: Towdium
  * Date: 21/04/19
  */
-public class PinyinTree {
+public class PinyinTree<T> {
+    final PinIn config;
     Node root = new NSlice();
 
-    public void put(String name, int identifier) {
+    public PinyinTree(PinIn p) {
+        config = p;
+    }
+
+    public void put(String name, T identifier) {
         for (int i = 0; i < name.length(); i++) {
             root = root.put(name, identifier, i);
         }
     }
 
-    public IntSet search(String s) {
-        IntSet ret = new IntOpenHashSet();
+    public Set<T> search(String s) {
+        Set<T> ret = new ObjectOpenHashSet<>();
         root.get(ret, s, 0);
         return ret;
     }
@@ -46,96 +44,35 @@ public class PinyinTree {
         return root.countMap();
     }
 
-    public static void refresh() {
-        Glue.refresh();
+    abstract class Node {
+        abstract void get(Set<T> ret, String name, int offset);
+
+        abstract void get(Set<T> ret);
+
+        abstract Node put(String name, T identifier, int offset);
+
+        abstract int countSlice();
+
+        abstract int countMap();
     }
 
-    static class Glue {
-        Map<Pinyin, CharSet> map = new Object2ObjectArrayMap<>();
-        Char2ObjectMap<Set<Pinyin>> index;
-        static List<WeakReference<Glue>> instances = new ArrayList<>();
-
-        public Char2ObjectMap<IntSet> get(String name, int offset) {
-            Char2ObjectMap<IntSet> ret = new Char2ObjectArrayMap<>();
-            BiConsumer<Pinyin, CharSet> add = (p, cs) -> p.match(name, offset).foreach(i -> {
-                for (char c : cs) ret.computeIfAbsent(c, k -> new IntArraySet()).add(i);
-                return true;
-            });
-
-            if (index != null) {
-                index.computeIfPresent(name.charAt(offset), (b, s) -> {
-                    s.forEach(p -> add.accept(p, map.get(p)));
-                    return s;
-                });
-            } else map.forEach(add);
-            return ret;
-        }
-
-        public void put(char ch) {
-            if (!Matcher.isChinese(ch)) return;
-            for (Pinyin p : Pinyin.get(ch)) {
-                map.compute(p, (py, cs) -> {
-                    if (cs == null) {
-                        cs = new CharArraySet();
-                        if (index != null) index.computeIfAbsent(py.start(),
-                                c -> new ObjectOpenHashSet<>()).add(py);
-                    } else if (cs.size() >= 16 && cs instanceof CharArraySet)
-                        cs = new CharOpenHashSet(cs);
-                    cs.add(ch);
-                    return cs;
-                });
-            }
-            if (map.size() >= 16 && index == null) {
-                map = new Object2ObjectOpenHashMap<>(map);
-                instances.add(new WeakReference<>(this));
-                index();
-            }
-        }
-
-        public void index() {
-            index = new Char2ObjectOpenHashMap<>();
-            map.forEach((p, cs) -> index.computeIfAbsent(p.start(),
-                    c -> new ObjectOpenHashSet<>()).add(p));
-        }
-
-        static void refresh() {
-            instances = instances.stream().filter(i -> {
-                Glue g = i.get();
-                if (g != null) g.index();
-                return g != null;
-            }).collect(Collectors.toList());
-        }
-    }
-
-    interface Node {
-        void get(IntSet ret, String name, int offset);
-
-        void get(IntSet ret);
-
-        Node put(String name, int identifier, int offset);
-
-        int countSlice();
-
-        int countMap();
-    }
-
-    public static class NSlice implements Node {
+    public class NSlice extends Node {
         Node exit = new NMap();
         String name;
         int start, end;
 
         @Override
-        public void get(IntSet ret, String name, int offset) {
+        public void get(Set<T> ret, String name, int offset) {
             get(ret, name, offset, 0);
         }
 
         @Override
-        public void get(IntSet ret) {
+        public void get(Set<T> ret) {
             exit.get(ret);
         }
 
         @Override
-        public Node put(String name, int identifier, int offset) {
+        public Node put(String name, T identifier, int offset) {
             if (this.name == null) {
                 this.name = name;
                 start = offset;
@@ -178,12 +115,12 @@ public class PinyinTree {
             end = offset;
         }
 
-        private void get(IntSet ret, String name, int offset, int start) {
+        private void get(Set<T> ret, String name, int offset, int start) {
             if (this.start + start == end) exit.get(ret, name, offset);
             else if (offset == name.length()) exit.get(ret);
             else {
                 char ch = this.name.charAt(this.start + start);
-                Char.get(ch).match(name, offset).foreach(i -> {
+                config.genChar(ch).match(name, offset).traverse(i -> {
                     get(ret, name, offset + i, start + 1);
                     return true;
                 });
@@ -191,34 +128,34 @@ public class PinyinTree {
         }
     }
 
-    public static class NMap implements Node {
+    public class NMap extends Node {
         Char2ObjectMap<Node> children; // = new Char2ObjectOpenHashMap<>();
         Glue glue;
-        IntSet leaves = new IntArraySet();
+        Set<T> leaves;
 
         @Override
-        public void get(IntSet ret, String name, int offset) {
+        public void get(Set<T> ret, String name, int offset) {
             if (name.length() == offset) get(ret);
             else if (children != null && glue != null) {
                 Node n = children.get(name.charAt(offset));
                 if (n != null) n.get(ret, name, offset + 1);
-                glue.get(name, offset).forEach((c, is) -> {
-                    for (int i : is) children.get(c).get(ret, name, offset + i);
-                });
+                glue.get(name, offset).forEach((c, is) -> is.foreach(i ->
+                        c.get(ret, name, offset + i)));
             }
         }
 
         @Override
-        public void get(IntSet ret) {
-            ret.addAll(leaves);
+        public void get(Set<T> ret) {
+            if (leaves != null) ret.addAll(leaves);
             if (children != null) children.forEach((p, n) -> n.get(ret));
         }
 
         @Override
-        public NMap put(String name, int identifier, int offset) {
+        public NMap put(String name, T identifier, int offset) {
             if (offset == name.length()) {
-                if (leaves.size() >= 16 && leaves instanceof IntArraySet)
-                    leaves = new IntOpenHashSet(leaves);
+                if (leaves == null) leaves = new ObjectArraySet<>();
+                else if (leaves.size() >= 16 && leaves instanceof IntArraySet)
+                    leaves = new ObjectOpenHashSet<>(leaves);
                 leaves.add(identifier);
             } else {
                 init();
@@ -258,6 +195,86 @@ public class PinyinTree {
                 children = new Char2ObjectArrayMap<>();
                 glue = new Glue();
             }
+        }
+
+        class Glue {
+            Map<Pinyin, Set<Node>> map = new Object2ObjectArrayMap<>();
+            GNode<T> root;
+
+            public Map<Node, IndexSet> get(String name, int offset) {
+                Map<Node, IndexSet> ret = new Object2ObjectOpenHashMap<>();
+                if (root == null) { map.forEach((p, ns) -> p.match(name, offset).foreach(i ->
+                        ns.forEach(n -> ret.computeIfAbsent(n, k -> new IndexSet()).set(i))));
+                } else root.get(ret, name, offset, map, offset);
+                return ret;
+            }
+
+            public void put(char ch) {
+                if (!Matcher.isChinese(ch)) return;
+                for (Pinyin p : Pinyin.get(ch, config)) {
+                    map.compute(p, (py, cs) -> {
+                        if (cs == null) cs = new ObjectArraySet<>();
+                        else if (cs.size() >= 16 && cs instanceof ObjectArraySet)
+                            cs = new ObjectOpenHashSet<>(cs);
+                        cs.add(children.get(ch));
+                        return cs;
+                    });
+                    if (root != null) index(p);
+                }
+                if (map.size() >= 16) {
+                    map = new Object2ObjectOpenHashMap<>(map);
+                    index();
+                }
+            }
+
+            private void index() {
+                root = new GNode<>();
+                map.forEach((p, ns) -> index(p));
+            }
+
+            private void index(Pinyin p) {
+                Phoneme[] ps = p.phonemes();
+                GNode<T> second = root.children().computeIfAbsent(ps[0], i -> new GNode<>());
+                GNode<T> shortcut = second.children().computeIfAbsent(ps[2], i -> new GNode<>());
+                shortcut.leaves().add(p);
+                GNode<T> third = second.children().computeIfAbsent(ps[1], i -> new GNode<>());
+                GNode<T> fourth = third.children().computeIfAbsent(ps[2], i -> new GNode<>());
+                fourth.leaves().add(p);
+            }
+        }
+    }
+
+    static class GNode<T> {
+        Map<Phoneme, GNode<T>> children;
+        Set<Pinyin> leaves;
+
+        public void get(Map<PinyinTree<T>.Node, IndexSet> ret, String name, int offset, Map<Pinyin, Set<PinyinTree<T>.Node>> map, int base) {
+            collect(ret, offset, map, base);
+            if (children != null) children.forEach((i, j) -> {
+                IndexSet is = i.match(name, offset);
+                is.foreach(k -> j.get(ret, name, offset + k, map, base));
+            });
+        }
+
+        public void collect(Map<PinyinTree<T>.Node, IndexSet> ret, int offset, Map<Pinyin, Set<PinyinTree<T>.Node>> map, int base) {
+            if (offset == base) return;
+            if (leaves != null) leaves.forEach(i -> map.get(i).forEach(j ->
+                    ret.computeIfAbsent(j, k -> new IndexSet()).set(offset - base)));
+            if (children != null) children.forEach((i, j) -> j.collect(ret, offset, map, base));
+        }
+
+        public Map<Phoneme, GNode<T>> children() {
+            if (children == null) children = new Object2ObjectArrayMap<>();
+            else if (children.size() >= 16 && children instanceof Object2ObjectArrayMap)
+                children = new Object2ObjectOpenHashMap<>(children);
+            return children;
+        }
+
+        public Set<Pinyin> leaves() {
+            if (leaves == null) leaves = new ObjectArraySet<>();
+            else if (leaves.size() >= 16 && leaves instanceof ObjectArraySet)
+                leaves = new ObjectOpenHashSet<>(leaves);
+            return leaves;
         }
     }
 }

@@ -1,17 +1,16 @@
 package me.towdium.pinin.elements;
 
 import me.towdium.pinin.PinIn;
-import me.towdium.pinin.utils.Cache;
 import me.towdium.pinin.utils.IndexSet;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-
-import static me.towdium.pinin.utils.Matcher.strCmp;
+import java.util.Set;
 
 /**
  * Author: Towdium
@@ -19,6 +18,7 @@ import static me.towdium.pinin.utils.Matcher.strCmp;
  */
 public class Pinyin implements Element {
     private static String[][] data;
+    private static Set<String> all = new HashSet<>();
     private static final String[] EMPTY = new String[0];
 
     static {
@@ -32,6 +32,7 @@ public class Pinyin implements Element {
                 char ch = line.charAt(0);
                 String sounds = line.substring(3);
                 data[ch] = sounds.split(", ");
+                all.addAll(Arrays.asList(data[ch]));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -41,39 +42,29 @@ public class Pinyin implements Element {
             if (data[i] == null) data[i] = EMPTY;
     }
 
-
-    private static Cache<String, Pinyin> cache = new Cache<>(Pinyin::new);
-
     private Phoneme initial;
     private Phoneme finale;
     private Phoneme tone;
+    private Phoneme[] phonemes;
 
-    public Pinyin(String str) {
-        set(str);
+    public Pinyin(String str, PinIn p) {
+        String[] elements = p.keyboard.separate(str);
+        initial = p.genPhoneme(elements[0]);
+        finale = p.genPhoneme(elements[1]);
+        tone = p.genPhoneme(elements[2]);
+        phonemes = new Phoneme[]{initial, finale, tone};
     }
 
-    public static Pinyin get(String str) {
-        return cache.get(str);
+    public Phoneme[] phonemes() {
+        return phonemes;
     }
 
-    public static Pinyin[] get(char ch) {
+    public static Pinyin[] get(char ch, PinIn p) {
         String[] ss = data[(int) ch];
         Pinyin[] ret = new Pinyin[ss.length];
         for (int i = 0; i < ss.length; i++)
-            ret[i] = get(ss[i]);
+            ret[i] = p.genPinyin(ss[i]);
         return ret;
-    }
-
-    public static void refresh() {
-        Phoneme.refresh();
-        cache.foreach((s, p) -> p.set(s));
-    }
-
-    private void set(String str) {
-        String[] elements = PinIn.getKeyboard().separate(str);
-        initial = Phoneme.get(elements[0]);
-        finale = Phoneme.get(elements[1]);
-        tone = Phoneme.get(elements[2]);
     }
 
     public IndexSet match(String str, int start) {
@@ -82,12 +73,6 @@ public class Pinyin implements Element {
         ret.merge(finale.match(str, ret, start));
         ret.merge(tone.match(str, ret, start));
         return ret;
-    }
-
-    public char start() {
-        String ret = initial.toString();
-        if (ret.isEmpty()) ret = finale.toString();
-        return ret.charAt(0);
     }
 
     @Override
