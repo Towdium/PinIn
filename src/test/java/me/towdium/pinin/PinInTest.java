@@ -12,7 +12,7 @@ import java.util.Set;
 
 public class PinInTest {
     /*
-    First char int index memory 42MB, construction 640ms, search 0.5ms
+    First char int index memory 42MB, construction 320ms, search 0.5ms
     First char generic index memory 46MB, construction 700ms, search 0.6ms
     Pinyin generic index memory 41MB, construction 2000ms, search 0.3ms
     Pinyin dense tree slice memory 33MB, construction 1700ms, search 0.5ms
@@ -21,6 +21,7 @@ public class PinInTest {
      */
 
     @Test
+    @SuppressWarnings("UnusedAssignment")
     public void test() throws IOException {
         List<String> strs = new ArrayList<>();
         PinyinTree tree = new PinyinTree(new PinIn());
