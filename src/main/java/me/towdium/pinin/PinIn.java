@@ -38,7 +38,11 @@ public class PinIn {
     }
 
     public boolean contains(String s1, CharSequence s2) {
-        return Matcher.contains(s1, s2, this);
+        return Matcher.check(s1, s2, this, true);
+    }
+
+    public boolean begins(String s1, CharSequence s2) {
+        return Matcher.check(s1, s2, this, false);
     }
 
     public Phoneme genPhoneme(String s) {

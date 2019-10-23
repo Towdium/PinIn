@@ -20,11 +20,16 @@ public class PinInTest {
     Pinyin dense phoneme cache memory 22MB construction 1700ms, search 0.5ms
      */
 
+    public static void main(String[] args) throws IOException {
+        new PinInTest().test();
+        // System.out.println(new PinIn().begins("安全安全", "qanq"));
+    }
+
     @Test
     @SuppressWarnings({"UnusedAssignment", "unused"})
     public void test() throws IOException {
         List<String> strs = new ArrayList<>();
-        PinyinTree tree = new PinyinTree(new PinIn());
+        PinyinTree tree = new PinyinTree(true, new PinIn());
         BufferedReader br = new BufferedReader(new InputStreamReader(
                 PinInTest.class.getResourceAsStream("examples.txt"), StandardCharsets.UTF_8));
         String line;
@@ -49,10 +54,5 @@ public class PinInTest {
         PinIn p = new PinIn();
         for (String s: strs) p.contains(s, "hong2");
         System.out.println("Loop search time: " + (System.currentTimeMillis() - time));
-    }
-
-    public static void main(String[] args) throws IOException {
-        new PinInTest().test();
-        //System.out.println(new PinIn().contains("安全安全", "qanq"));
     }
 }

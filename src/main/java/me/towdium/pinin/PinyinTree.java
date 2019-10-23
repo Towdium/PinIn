@@ -25,15 +25,16 @@ import static me.towdium.pinin.utils.Matcher.check;
 public class PinyinTree {
     Node root = new NSlice();
     PinIn context;
+    final boolean suffix;
 
-    public PinyinTree(PinIn context) {
+    public PinyinTree(boolean suffix, PinIn context) {
+        this.suffix = suffix;
         this.context = context;
     }
 
     public void put(String name, int identifier) {
-        for (int i = 0; i < name.length(); i++) {
+        for (int i = 0; i < (suffix ? name.length() : 1); i++)
             root = root.put(name, identifier, i);
-        }
     }
 
     public IntSet search(String s) {

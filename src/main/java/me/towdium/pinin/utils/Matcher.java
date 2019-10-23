@@ -8,13 +8,6 @@ import me.towdium.pinin.elements.Element;
  * Date: 21/04/19
  */
 public class Matcher {
-    public static boolean contains(String s1, CharSequence s2, PinIn p) {
-        boolean ret;
-        if (Matcher.isChinese(s1)) ret = check(s1, s2.toString(), p);
-        else ret = s1.contains(s2);
-        return ret;
-    }
-
     public static boolean isChinese(CharSequence s) {
         for (int i = s.length() - 1; i >= 0; i--) {
             if (isChinese(s.charAt(i))) return true;
@@ -38,14 +31,15 @@ public class Matcher {
         return len;
     }
 
-    private static boolean check(String s1, CharSequence s2, PinIn p) {
+    public static boolean check(String s1, CharSequence s2, PinIn p, boolean full) {
+        if (!Matcher.isChinese(s1)) return s1.contains(s2);
         boolean b;
         if (s2 instanceof String) {
             if (s2.toString().isEmpty()) {
                 b = true;
             } else {
                 b = false;
-                for (int i = 0; i < s1.length(); i++) {
+                for (int i = 0; i < (full ? s1.length() : 1); i++) {
                     if (check(s2.toString(), 0, s1, i, p)) {
                         b = true;
                         break;
