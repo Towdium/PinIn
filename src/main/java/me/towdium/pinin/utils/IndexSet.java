@@ -68,4 +68,8 @@ public class IndexSet {
             return builder.toString();
         } else return "0";
     }
+
+    public boolean isEmpty() {
+        return value == 0x0;
+    }
 }

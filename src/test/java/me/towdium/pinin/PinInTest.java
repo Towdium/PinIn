@@ -17,6 +17,7 @@ public class PinInTest {
     Pinyin generic index memory 41MB, construction 2000ms, search 0.3ms
     Pinyin dense tree slice memory 33MB, construction 1700ms, search 0.5ms
     Pinyin dense tree dnode memory 24MB, construction 1900ms, search 0.6ms
+    Pinyin dense phoneme cache memory 22MB construction 1700ms, search 0.5ms
      */
 
     @Test
