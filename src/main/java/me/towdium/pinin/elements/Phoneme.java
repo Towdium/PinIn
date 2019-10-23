@@ -48,6 +48,10 @@ public class Phoneme implements Element {
         return ret;
     }
 
+    public boolean isEmpty() {
+        return strs.length == 1 && strs[0].isEmpty();
+    }
+
     @Override
     public IndexSet match(String source, int start) {
         IndexSet ret = new IndexSet();

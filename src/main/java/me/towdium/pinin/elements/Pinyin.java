@@ -7,10 +7,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Author: Towdium
@@ -40,17 +38,15 @@ public class Pinyin implements Element {
             if (data[i] == null) data[i] = EMPTY;
     }
 
-    private Phoneme initial;
-    private Phoneme finale;
-    private Phoneme tone;
     private Phoneme[] phonemes;
 
     public Pinyin(String str, PinIn p) {
-        String[] elements = p.keyboard.separate(str);
-        initial = p.genPhoneme(elements[0]);
-        finale = p.genPhoneme(elements[1]);
-        tone = p.genPhoneme(elements[2]);
-        phonemes = new Phoneme[]{initial, finale, tone};
+        List<Phoneme> l = new ArrayList<>();
+        for (String s: p.keyboard.separate(str)) {
+            Phoneme ph = p.genPhoneme(s);
+            if (!ph.isEmpty()) l.add(ph);
+        }
+        phonemes = l.toArray(new Phoneme[]{});
     }
 
     public Phoneme[] phonemes() {
@@ -67,20 +63,16 @@ public class Pinyin implements Element {
 
     public IndexSet match(String str, int start) {
         IndexSet ret = new IndexSet(0x1);
-        ret = initial.match(str, ret, start);
-        ret.merge(finale.match(str, ret, start));
-        ret.merge(tone.match(str, ret, start));
+        ret = phonemes[0].match(str, ret, start);
+        for (int i = 1; i < phonemes.length; i++)
+            ret.merge(phonemes[i].match(str, ret, start));
         return ret;
-    }
-
-    public char start() {
-        String ret = initial.toString();
-        if (ret.isEmpty()) ret = finale.toString();
-        return ret.charAt(0);
     }
 
     @Override
     public String toString() {
-        return "" + initial + finale + tone;
+        StringBuilder ret = new StringBuilder();
+        for (Phoneme p : phonemes) ret.append(p);
+        return ret.toString();
     }
 }

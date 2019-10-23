@@ -21,7 +21,7 @@ public class PinInTest {
      */
 
     @Test
-    @SuppressWarnings("UnusedAssignment")
+    @SuppressWarnings({"UnusedAssignment", "unused"})
     public void test() throws IOException {
         List<String> strs = new ArrayList<>();
         PinyinTree tree = new PinyinTree(new PinIn());
@@ -53,10 +53,6 @@ public class PinInTest {
 
     public static void main(String[] args) throws IOException {
         new PinInTest().test();
-//        PinyinCharIntegerTree tree = new PinyinCharIntegerTree(new PinIn());
-//////        tree.put("红色羊毛", 0);
-//////        tree.put("红色玻璃", 0);
-//////        tree.search("hong2se4y");
-        //System.out.println(new PinIn().contains("红色", "hongseyangmao"));
+        //System.out.println(new PinIn().contains("安全安全", "qanq"));
     }
 }
