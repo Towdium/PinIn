@@ -29,7 +29,7 @@ public class PinInTest {
     @SuppressWarnings({"UnusedAssignment", "unused"})
     public void test() throws IOException {
         List<String> strs = new ArrayList<>();
-        PinyinTree tree = new PinyinTree(true, new PinIn());
+        PinyinTree tree = new PinyinTree(true, new PinIn.Builder().setKeyboard(PinyinKeyboard.DAQIAN).build());
         BufferedReader br = new BufferedReader(new InputStreamReader(
                 PinInTest.class.getResourceAsStream("examples.txt"), StandardCharsets.UTF_8));
         String line;

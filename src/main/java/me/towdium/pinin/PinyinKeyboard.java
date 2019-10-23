@@ -1,79 +1,80 @@
 package me.towdium.pinin;
 
 import java.util.HashMap;
+import java.util.Objects;
 
 public enum PinyinKeyboard {
 
     QUANPIN, DAQIAN;
 
-    private static HashMap<String, String> PHONETIC_SYMBOL = new java.util.HashMap<String, String>() {{
-        put("a", "ㄚ");
-        put("o", "ㄛ");
-        put("e", "ㄜ");
-        put("er", "ㄦ");
-        put("ai", "ㄞ");
-        put("ei", "ㄟ");
-        put("ao", "ㄠ");
-        put("ou", "ㄡ");
-        put("an", "ㄢ");
-        put("en", "ㄣ");
-        put("ang", "ㄤ");
-        put("eng", "ㄥ");
-        put("ong", "ㄨㄥ");
-        put("i", "ㄧ");
-        put("ia", "ㄧㄚ");
-        put("iao", "ㄧㄠ");
-        put("ie", "ㄧㄝ");
-        put("iu", "ㄧㄡ");
-        put("ian", "ㄧㄢ");
-        put("in", "ㄧㄣ");
-        put("iang", "ㄧㄤ");
-        put("ing", "ㄧㄥ");
-        put("iong", "ㄩㄥ");
-        put("u", "ㄨ");
-        put("ua", "ㄨㄚ");
-        put("uo", "ㄨㄛ");
-        put("uai", "ㄨㄞ");
-        put("ui", "ㄨㄟ");
-        put("uan", "ㄨㄢ");
-        put("un", "ㄨㄣ");
-        put("uang", "ㄨㄤ");
-        put("ueng", "ㄨㄥ");
-        put("uen", "ㄩㄣ");
-        put("v", "ㄩ");
-        put("ve", "ㄩㄝ");
-        put("van", "ㄩㄢ");
-        put("vang", "ㄩㄤ");
-        put("vn", "ㄩㄣ");
-        put("b", "ㄅ");
-        put("p", "ㄆ");
-        put("m", "ㄇ");
-        put("f", "ㄈ");
-        put("d", "ㄉ");
-        put("t", "ㄊ");
-        put("n", "ㄋ");
-        put("l", "ㄌ");
-        put("g", "ㄍ");
-        put("k", "ㄎ");
-        put("h", "ㄏ");
-        put("j", "ㄐ");
-        put("q", "ㄑ");
-        put("x", "ㄒ");
-        put("zh", "ㄓ");
-        put("ch", "ㄔ");
-        put("sh", "ㄕ");
-        put("r", "ㄖ");
-        put("z", "ㄗ");
-        put("c", "ㄘ");
-        put("s", "ㄙ");
-        put("w", "ㄨ");
-        put("y", "ㄧ");
-        put("1", "1");
-        put("2", "2");
+    private static HashMap<String, String> PHONETIC_PHONEME = new java.util.HashMap<String, String>() {{
+        put("", "");
+        put("0", "");
+        put("1", " ");
+        put("2", "6");
         put("3", "3");
         put("4", "4");
-        put("0", "");
-        put("", "");
+        put("a", "8");
+        put("ai", "9");
+        put("an", "0");
+        put("ang", ";");
+        put("ao", "l");
+        put("b", "1");
+        put("c", "h");
+        put("ch", "t");
+        put("d", "2");
+        put("e", "k");
+        put("ei", "o");
+        put("en", "p");
+        put("eng", "/");
+        put("er", "-");
+        put("f", "z");
+        put("g", "e");
+        put("h", "c");
+        put("i", "u");
+        put("ia", "u8");
+        put("ian", "u0");
+        put("iang", "u;");
+        put("iao", "ul");
+        put("ie", "u,");
+        put("in", "up");
+        put("ing", "u/");
+        put("iong", "m/");
+        put("iu", "u.");
+        put("j", "r");
+        put("k", "d");
+        put("l", "x");
+        put("m", "a");
+        put("n", "s");
+        put("o", "i");
+        put("ong", "j/");
+        put("ou", ".");
+        put("p", "q");
+        put("q", "f");
+        put("r", "b");
+        put("s", "n");
+        put("sh", "g");
+        put("t", "w");
+        put("u", "j");
+        put("ua", "j8");
+        put("uai", "j9");
+        put("uan", "j0");
+        put("uang", "j;");
+        put("uen", "mp");
+        put("ueng", "j/");
+        put("ui", "jo");
+        put("un", "jp");
+        put("uo", "ji");
+        put("v", "m");
+        put("van", "m0");
+        put("vang", "m;");
+        put("ve", "m,");
+        put("vn", "mp");
+        put("w", "j");
+        put("x", "v");
+        put("y", "u");
+        put("z", "y");
+        put("zh", "5");
     }};
 
     private static HashMap<String, String> PHONETIC_SPELL = new HashMap<String, String>() {{
@@ -108,49 +109,6 @@ public enum PinyinKeyboard {
         put("zi", "z");
         put("ri", "r");
     }};
-    private static HashMap<Character, String> KEYBOARD_DAQIAN = new HashMap<Character, String>() {{
-        put('ㄇ', "a");
-        put('ㄖ', "b");
-        put('ㄏ', "c");
-        put('ㄎ', "d");
-        put('ㄍ', "e");
-        put('ㄑ', "f");
-        put('ㄕ', "g");
-        put('ㄘ', "h");
-        put('ㄛ', "i");
-        put('ㄨ', "j");
-        put('ㄜ', "k");
-        put('ㄠ', "l");
-        put('ㄩ', "m");
-        put('ㄙ', "n");
-        put('ㄟ', "o");
-        put('ㄣ', "p");
-        put('ㄆ', "q");
-        put('ㄐ', "r");
-        put('ㄋ', "s");
-        put('ㄔ', "t");
-        put('ㄧ', "u");
-        put('ㄒ', "v");
-        put('ㄊ', "w");
-        put('ㄌ', "x");
-        put('ㄗ', "y");
-        put('ㄈ', "z");
-        put('ㄅ', "1");
-        put('ㄉ', "2");
-        put('ㄓ', "5");
-        put('ㄚ', "8");
-        put('ㄞ', "9");
-        put('ㄢ', "0");
-        put('ㄦ', "-");
-        put('ㄤ', ";");
-        put('ㄝ', ",");
-        put('ㄡ', ".");
-        put('ㄥ', "/");
-        put('1', " ");
-        put('2', "6");
-        put('3', "3");
-        put('4', "4");
-    }};
 
     public String[] separate(String s) {
         if (this == DAQIAN) {
@@ -169,13 +127,7 @@ public enum PinyinKeyboard {
 
     public String keys(String s) {
         if (this == QUANPIN) return s;
-        else {
-            String symbol = PHONETIC_SYMBOL.get(s);
-            if (symbol == null)
-                throw new RuntimeException("Unrecognized elements: " + s);
-            StringBuilder builder = new StringBuilder();
-            for (char c : symbol.toCharArray()) builder.append(KEYBOARD_DAQIAN.get(c));
-            return builder.toString();
-        }
+        else return Objects.requireNonNull(PHONETIC_PHONEME.get(s),
+                "Unrecognized elements: " + s);
     }
 }
