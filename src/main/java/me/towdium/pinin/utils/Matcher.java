@@ -56,7 +56,7 @@ public class Matcher {
         return b;
     }
 
-    private static boolean check(String s1, int start1, String s2, int start2, PinIn p) {
+    public static boolean check(String s1, int start1, String s2, int start2, PinIn p) {
         if (start1 == s1.length()) return true;
 
         Element r = p.genChar(s2.charAt(start2));

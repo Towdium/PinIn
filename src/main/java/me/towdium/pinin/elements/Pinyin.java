@@ -18,7 +18,6 @@ import java.util.Set;
  */
 public class Pinyin implements Element {
     private static String[][] data;
-    private static Set<String> all = new HashSet<>();
     private static final String[] EMPTY = new String[0];
 
     static {
@@ -32,7 +31,6 @@ public class Pinyin implements Element {
                 char ch = line.charAt(0);
                 String sounds = line.substring(3);
                 data[ch] = sounds.split(", ");
-                all.addAll(Arrays.asList(data[ch]));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -73,6 +71,12 @@ public class Pinyin implements Element {
         ret.merge(finale.match(str, ret, start));
         ret.merge(tone.match(str, ret, start));
         return ret;
+    }
+
+    public char start() {
+        String ret = initial.toString();
+        if (ret.isEmpty()) ret = finale.toString();
+        return ret.charAt(0);
     }
 
     @Override
