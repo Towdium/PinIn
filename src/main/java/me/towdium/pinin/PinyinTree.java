@@ -33,11 +33,17 @@ public class PinyinTree<T> {
     }
 
     public void put(String name, T identifier) {
-        int idx = reverse.getInt(identifier);
-        if (idx == 0) {
-            idx = ++count;
-            map.put(idx, identifier);
-            reverse.put(identifier, idx);
+        int idx;
+        if (identifier instanceof Integer) idx = (Integer) identifier;
+        else {
+            if (map == null) map = new Int2ObjectOpenHashMap<>();
+            if (reverse == null) reverse = new Object2IntOpenHashMap<>();
+            idx = reverse.getInt(identifier);
+            if (idx == 0) {
+                idx = ++count;
+                map.put(idx, identifier);
+                reverse.put(identifier, idx);
+            }
         }
         for (int i = 0; i < (suffix ? name.length() : 1); i++)
             root = root.put(name, idx, i);
