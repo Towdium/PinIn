@@ -13,8 +13,6 @@ import java.util.Arrays;
  * Date: 29/04/19
  */
 public class Char implements Element {
-
-
     private Element[] patterns = new Element[0];
 
     public Char(char ch, PinIn p) {

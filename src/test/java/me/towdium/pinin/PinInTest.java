@@ -10,26 +10,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import static me.towdium.pinin.PinyinKeyboard.DAQIAN;
+
 public class PinInTest {
-    /*
-    First char int index memory 42MB, construction 320ms, search 0.5ms
-    First char generic index memory 46MB, construction 700ms, search 0.6ms
-    Pinyin generic index memory 41MB, construction 2000ms, search 0.3ms
-    Pinyin dense tree slice memory 33MB, construction 1700ms, search 0.5ms
-    Pinyin dense tree dnode memory 24MB, construction 1900ms, search 0.6ms
-    Pinyin dense phoneme cache memory 22MB construction 1700ms, search 0.5ms
-     */
-
-    public static void main(String[] args) throws IOException {
-        new PinInTest().test();
-        // System.out.println(new PinIn().begins("安全安全", "qanq"));
-    }
-
     @Test
     @SuppressWarnings({"UnusedAssignment", "unused"})
-    public void test() throws IOException {
+    public void performance() throws IOException {
+        System.out.println("Test performance");
         List<String> strs = new ArrayList<>();
-        PinyinTree tree = new PinyinTree(true, new PinIn.Builder().setKeyboard(PinyinKeyboard.DAQIAN).build());
+        PinyinTree<Integer> tree = new PinyinTree<>(true, new PinIn());
         BufferedReader br = new BufferedReader(new InputStreamReader(
                 PinInTest.class.getResourceAsStream("examples.txt"), StandardCharsets.UTF_8));
         String line;
@@ -38,7 +27,7 @@ public class PinInTest {
             String str = line.substring(0, line.length() - 1);
             strs.add(str);
         }
-        System.out.println("Tree constructing");
+
         long time = System.currentTimeMillis();
         for (int i = 0; i < strs.size(); i++) tree.put(strs.get(i), i);
         System.out.println("Construction time: " + (System.currentTimeMillis() - time));
@@ -54,5 +43,88 @@ public class PinInTest {
         PinIn p = new PinIn();
         for (String s: strs) p.contains(s, "hong2");
         System.out.println("Loop search time: " + (System.currentTimeMillis() - time));
+    }
+
+    @Test
+    public void quanpin() {
+        System.out.println("Test quanpin");
+        PinIn p = new PinIn();
+        assert p.contains("测试文本", "ceshiwenben");
+        assert p.contains("测试文本", "ceshiwenbe");
+        assert p.contains("测试文本", "ceshiwben");
+        assert p.contains("测试文本", "ce4shi4w2ben");
+        assert !p.contains("测试文本", "ce2shi4w2ben");
+        assert p.contains("合金炉", "hejinlu");
+        assert p.contains("洗矿场", "xikuangchang");
+        assert p.contains("流体", "liuti");
+    }
+
+    @Test
+    public void daqian() {
+        System.out.println("Test daqian");
+        PinIn p = new PinIn().config().keyboard(DAQIAN).commit();
+        assert p.contains("测试文本", "hk4g4jp61p3");
+        assert p.contains("测试文本", "hkgjp1");
+        assert p.contains("錫", "vu6");
+        assert p.contains("物質", "j456");
+    }
+
+    @Test
+    public void tree() {
+        System.out.println("Test tree");
+        PinyinTree<Integer> tree = new PinyinTree<>(true, new PinIn());
+        tree.put("测试文本", 1);
+        tree.put("测试切分", 5);
+        tree.put("测试切分文本", 6);
+        tree.put("合金炉", 2);
+        tree.put("洗矿场", 3);
+        tree.put("流体", 4);
+
+        Set<Integer> s;
+        s = tree.search("ceshiwenben");
+        assert s.size() == 1 && s.contains(1);
+        s = tree.search("ceshiwenbe");
+        assert s.size() == 1 && s.contains(1);
+        s = tree.search("ceshiwben");
+        assert s.size() == 1 && s.contains(1);
+        s = tree.search("ce4shi4w2ben");
+        assert s.size() == 1 && s.contains(1);
+        s = tree.search("ce2shi4w2ben");
+        assert s.size() == 0;
+        s = tree.search("hejinlu");
+        assert s.size() == 1 && s.contains(2);
+        s = tree.search("xikuangchang");
+        assert s.size() == 1 && s.contains(3);
+        s = tree.search("liuti");
+        assert s.size() == 1 && s.contains(4);
+        s = tree.search("ceshi");
+        assert s.size() == 3 && s.contains(1) && s.contains(5);
+        s = tree.search("ceshiqiefen");
+        assert s.size() == 2 && s.contains(5);
+        s = tree.search("ceshiqiefenw");
+        assert s.size() == 1 && s.contains(6);
+    }
+
+    @Test
+    public void context() {
+        PinIn p = new PinIn();
+        PinyinTree<Integer> tree = new PinyinTree<>(true, p);
+        tree.put("测试文本", 0);
+        tree.put("测试文字", 3);
+        Set<Integer> s;
+        s = tree.search("ce4shi4w2ben");
+        assert s.size() == 1 && s.contains(0);
+        s = tree.search("ce4shw");
+        assert s.size() == 2;
+        s = tree.search("ce4sw");
+        assert s.isEmpty();
+        p.config().fSh2S(true).commit();
+        s = tree.search("ce4sw");
+        assert s.size() == 2;
+        p.config().fSh2S(false).keyboard(DAQIAN).commit();
+        s = tree.search("hk4g4jp61p3");
+        assert s.size() == 1;
+        s = tree.search("ce4shi4w2ben");
+        assert s.isEmpty();
     }
 }

@@ -41,12 +41,7 @@ public class Pinyin implements Element {
     private Phoneme[] phonemes;
 
     public Pinyin(String str, PinIn p) {
-        List<Phoneme> l = new ArrayList<>();
-        for (String s: p.keyboard.separate(str)) {
-            Phoneme ph = p.genPhoneme(s);
-            if (!ph.isEmpty()) l.add(ph);
-        }
-        phonemes = l.toArray(new Phoneme[]{});
+        reload(str, p);
     }
 
     public Phoneme[] phonemes() {
@@ -74,5 +69,14 @@ public class Pinyin implements Element {
         StringBuilder ret = new StringBuilder();
         for (Phoneme p : phonemes) ret.append(p);
         return ret.toString();
+    }
+
+    public void reload(String str, PinIn p) {
+        List<Phoneme> l = new ArrayList<>();
+        for (String s : p.keyboard().separate(str)) {
+            Phoneme ph = p.genPhoneme(s);
+            if (!ph.isEmpty()) l.add(ph);
+        }
+        phonemes = l.toArray(new Phoneme[]{});
     }
 }

@@ -1,12 +1,8 @@
 package me.towdium.pinin;
 
 import it.unimi.dsi.fastutil.chars.*;
-import it.unimi.dsi.fastutil.ints.IntArraySet;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
-import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import it.unimi.dsi.fastutil.ints.*;
+import it.unimi.dsi.fastutil.objects.*;
 import me.towdium.pinin.elements.Phoneme;
 import me.towdium.pinin.elements.Pinyin;
 import me.towdium.pinin.utils.Matcher;
@@ -15,6 +11,7 @@ import me.towdium.pinin.utils.StringSlice;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 import static me.towdium.pinin.utils.Matcher.check;
 
@@ -22,9 +19,12 @@ import static me.towdium.pinin.utils.Matcher.check;
  * Author: Towdium
  * Date: 21/04/19
  */
-public class PinyinTree {
-    Node root = new NSlice();
+public class PinyinTree<T> {
+    Node root = new NDense();
     PinIn context;
+    Int2ObjectMap<T> map = new Int2ObjectOpenHashMap<>();
+    Object2IntMap<T> reverse = new Object2IntOpenHashMap<>();
+    int count = 0;
     final boolean suffix;
 
     public PinyinTree(boolean suffix, PinIn context) {
@@ -32,15 +32,26 @@ public class PinyinTree {
         this.context = context;
     }
 
-    public void put(String name, int identifier) {
+    public void put(String name, T identifier) {
+        int idx = reverse.getInt(identifier);
+        if (idx == 0) {
+            idx = ++count;
+            map.put(idx, identifier);
+            reverse.put(identifier, idx);
+        }
         for (int i = 0; i < (suffix ? name.length() : 1); i++)
-            root = root.put(name, identifier, i);
+            root = root.put(name, idx, i);
     }
 
-    public IntSet search(String s) {
+    public Set<T> search(String s) {
         IntSet ret = new IntOpenHashSet();
         root.get(ret, s, 0);
-        return ret;
+        return ret.stream().map(i -> map.get(i.intValue()))
+                .collect(Collectors.toSet());
+    }
+
+    public PinIn context() {
+        return context;
     }
 
     interface Node {
@@ -52,7 +63,7 @@ public class PinyinTree {
     }
 
     public class NSlice implements Node {
-        Node exit = new NMap();
+        Node exit = new NDense();
         String name;
         int start, end;
 
