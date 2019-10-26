@@ -151,16 +151,16 @@ public class PinyinTree<T> {
     }
 
     public static class NDense implements Node {
-        IntList offsets = new IntArrayList(1);
-        IntList objects = new IntArrayList(1);
+        // offset, object, offset, object
+        IntList data = new IntArrayList();
 
         @Override
         public void get(PinyinTree p, IntSet ret, String name, int offset) {
             if (name.length() == offset) get(p, ret);
             else {
-                for (int i = 0; i < offsets.size(); i++) {
-                    int ch = offsets.getInt(i);
-                    int obj = objects.getInt(i);
+                for (int i = 0; i < data.size() / 2; i++) {
+                    int ch = data.getInt(i * 2);
+                    int obj = data.getInt(i * 2 + 1);
                     if (p.chars.getChar(ch) == '\0') return;
                     if (check(name, offset, p.charsStr(ch), 0, p.context)) ret.add(obj);
                 }
@@ -169,27 +169,28 @@ public class PinyinTree<T> {
 
         @Override
         public void get(PinyinTree p, IntSet ret) {
-            objects.forEach((IntConsumer) ret::add);
+            for (int i = 0; i < data.size() / 2; i++)
+                ret.add(data.getInt(i * 2 + 1));
         }
 
         private void set(int index, IntSet identifier) {
             identifier.forEach((IntConsumer) i -> {
-                offsets.add(index);
-                objects.add(i);
+                data.add(index);
+                data.add(i);
             });
         }
 
         @Override
         public Node put(PinyinTree p, int name, int identifier) {
-            if (objects.size() >= 256) {
+            if (data.size() >= 1024) {
                 Node ret = new NMap();
-                for (int i = 0; i < objects.size(); i++)
-                    ret.put(p, offsets.getInt(i), objects.getInt(i));
+                for (int i = 0; i < data.size() / 2; i++)
+                    ret.put(p, data.getInt(i * 2), data.getInt(i * 2 + 1));
                 ret.put(p, name, identifier);
                 return ret;
             } else {
-                offsets.add(name);
-                objects.add(identifier);
+                data.add(name);
+                data.add(identifier);
                 return this;
             }
         }
