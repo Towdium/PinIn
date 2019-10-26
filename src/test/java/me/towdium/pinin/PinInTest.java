@@ -1,5 +1,7 @@
 package me.towdium.pinin;
 
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
@@ -24,8 +26,7 @@ public class PinInTest {
         String line;
         while ((line = br.readLine()) != null) {
             if (line.isEmpty()) continue;
-            String str = line.substring(0, line.length() - 1);
-            strs.add(str);
+            strs.add(line);
         }
 
         long time = System.currentTimeMillis();
@@ -41,7 +42,10 @@ public class PinInTest {
 
         time = System.currentTimeMillis();
         PinIn p = new PinIn();
-        for (String s: strs) p.contains(s, "hong2");
+        IntSet result = new IntOpenHashSet();
+        for (int i = 0; i < strs.size(); i++)
+            if (p.contains(strs.get(i), "hong2")) result.add(i);
+        assert result.equals(is);
         System.out.println("Loop search time: " + (System.currentTimeMillis() - time));
     }
 
