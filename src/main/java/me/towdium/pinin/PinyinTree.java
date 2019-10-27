@@ -15,10 +15,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
 
 import static me.towdium.pinin.utils.Matcher.check;
+import static me.towdium.pinin.utils.Matcher.strCmp;
 
 /**
  * Author: Towdium
@@ -44,10 +44,6 @@ public class PinyinTree<T> {
 
     private String charsStr(int start, int end) {
         return new String(chars.subList(start, end).toCharArray());
-    }
-
-    private int charsLen(int start) {
-        return charsEnd(start) - start;
     }
 
     public PinyinTree(boolean suffix, PinIn context) {
@@ -85,8 +81,13 @@ public class PinyinTree<T> {
     }
 
     public static class NSlice implements Node {
-        Node exit = new NDense();
-        int start = -1, end = -1;
+        Node exit = new NMap();
+        int start, end;
+
+        public NSlice(int start, int end) {
+            this.start = start;
+            this.end = end;
+        }
 
         @Override
         public void get(PinyinTree p, IntSet ret, String name, int offset) {
@@ -100,41 +101,25 @@ public class PinyinTree<T> {
 
         @Override
         public Node put(PinyinTree p, int name, int identifier) {
-            if (start == -1 && end == -1) {
-                start = name;
-                end = p.charsEnd(start);
-                exit = exit.put(p, name, identifier);
-            } else {
-                int length = end - start;
-                int match = Matcher.strCmp(p.charsStr(start, end), p.charsStr(name), 0, 0, length);
-                if (match >= length) exit = exit.put(p, name + length, identifier);
-                else {
-                    cut(p, start + match);
-                    exit = exit.put(p, name + match, identifier);
-                }
+            int length = end - start;
+            int match = Matcher.strCmp(p.charsStr(start, end), p.charsStr(name), 0, 0, length);
+            if (match >= length) exit = exit.put(p, name + length, identifier);
+            else {
+                cut(p, start + match);
+                exit = exit.put(p, name + match, identifier);
             }
             return start == end ? exit : this;
         }
 
         private void cut(PinyinTree p, int offset) {
-            if (p.chars.getChar(end) == '\0') {
-                NDense insert = new NDense();
-                IntSet is = new IntOpenHashSet();
-                exit.get(p, is);
-                insert.set(offset, is);
-                exit = insert;
-            } else {
-                NMap insert = new NMap();
-                if (offset + 1 == end) insert.put(p, p.chars.getChar(offset), exit);
-                else {
-                    NSlice half = new NSlice();
-                    half.start = offset + 1;
-                    half.end = end;
-                    half.exit = exit;
-                    insert.put(p, p.chars.getChar(offset), half);
-                }
-                exit = insert;
+            NMap insert = new NMap();
+            if (offset + 1 == end) insert.put(p, p.chars.getChar(offset), exit);
+            else {
+                NSlice half = new NSlice(offset + 1, end);
+                half.exit = exit;
+                insert.put(p, p.chars.getChar(offset), half);
             }
+            exit = insert;
             end = offset;
         }
 
@@ -173,19 +158,19 @@ public class PinyinTree<T> {
                 ret.add(data.getInt(i * 2 + 1));
         }
 
-        private void set(int index, IntSet identifier) {
-            identifier.forEach((IntConsumer) i -> {
-                data.add(index);
-                data.add(i);
-            });
-        }
-
         @Override
         public Node put(PinyinTree p, int name, int identifier) {
-            if (data.size() >= 1024) {
-                Node ret = new NMap();
-                for (int i = 0; i < data.size() / 2; i++)
-                    ret.put(p, data.getInt(i * 2), data.getInt(i * 2 + 1));
+            if (data.size() >= 512) {
+                int pattern = data.getInt(0);
+                int common = Integer.MAX_VALUE;
+                for (int i = 0; i < data.size() / 2; i++) {
+                    int offset = data.getInt(i * 2);
+                    common = Math.min(common, strCmp(p.chars, pattern, offset));
+                    if (common == 0) break;
+                }
+                Node ret = new NSlice(pattern, pattern + common);
+                for (int j = 0; j < data.size() / 2; j++)
+                    ret.put(p, data.getInt(j * 2), data.getInt(j * 2 + 1));
                 ret.put(p, name, identifier);
                 return ret;
             } else {
@@ -199,7 +184,7 @@ public class PinyinTree<T> {
     public static class NMap implements Node {
         Char2ObjectMap<Node> children;
         Glue glue;
-        IntSet leaves = new IntArraySet();
+        IntSet leaves = new IntArraySet(1);
 
         @Override
         public void get(PinyinTree p, IntSet ret, String name, int offset) {
@@ -228,7 +213,7 @@ public class PinyinTree<T> {
                 init();
                 char ch = p.chars.getChar(name);
                 Node sub = children.get(ch);
-                if (sub == null) put(p, ch, sub = new NSlice());
+                if (sub == null) put(p, ch, sub = new NDense());
                 sub = sub.put(p, name + 1, identifier);
                 children.put(ch, sub);
             }

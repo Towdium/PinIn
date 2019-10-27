@@ -1,5 +1,6 @@
 package me.towdium.pinin.utils;
 
+import it.unimi.dsi.fastutil.chars.CharList;
 import me.towdium.pinin.PinIn;
 import me.towdium.pinin.elements.Element;
 
@@ -29,6 +30,14 @@ public class Matcher {
         for (int i = 0; i < len; i++)
             if (a.charAt(i + aStart) != b.charAt(i + bStart)) return i;
         return len;
+    }
+
+    public static int strCmp(CharList cl, int aStart, int bStart) {
+        for (int i = 0; ; i++) {
+            char ca = cl.getChar(i + aStart);
+            char cb = cl.getChar(i + bStart);
+            if (ca != cb || ca == '\0') return i;
+        }
     }
 
     public static boolean check(String s1, CharSequence s2, PinIn p, boolean full) {
