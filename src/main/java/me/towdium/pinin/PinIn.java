@@ -12,7 +12,7 @@ public class PinIn {
     private Cache<String, Pinyin> cPinyin = new Cache<>(s -> new Pinyin(s, this));
     private Cache<Character, Char> cChar = new Cache<>(s -> new Char(s, this));
 
-    private PinyinKeyboard keyboard;
+    private Keyboard keyboard;
     private boolean fZh2Z;
     private boolean fSh2S;
     private boolean fCh2C;
@@ -22,11 +22,11 @@ public class PinIn {
     private boolean fU2V;
 
     public PinIn() {
-        this(PinyinKeyboard.QUANPIN, false, false, false,
+        this(Keyboard.QUANPIN, false, false, false,
                 false, false, false, false);
     }
 
-    public PinIn(PinyinKeyboard keyboard, boolean fZh2Z, boolean fSh2S, boolean fCh2C,
+    public PinIn(Keyboard keyboard, boolean fZh2Z, boolean fSh2S, boolean fCh2C,
                  boolean fAng2An, boolean fIng2In, boolean fEng2En, boolean fU2V) {
         this.keyboard = keyboard;
         this.fZh2Z = fZh2Z;
@@ -63,7 +63,7 @@ public class PinIn {
         Pinyin.class.getClass();
     }
 
-    public PinyinKeyboard keyboard() {
+    public Keyboard keyboard() {
         return keyboard;
     }
 
@@ -113,7 +113,7 @@ public class PinIn {
     }
 
     public static class Config {
-        public PinyinKeyboard keyboard;
+        public Keyboard keyboard;
         public boolean fZh2Z;
         public boolean fSh2S;
         public boolean fCh2C;
@@ -135,7 +135,7 @@ public class PinIn {
             context = p;
         }
 
-        public Config keyboard(PinyinKeyboard keyboard) {
+        public Config keyboard(Keyboard keyboard) {
             this.keyboard = keyboard;
             return this;
         }

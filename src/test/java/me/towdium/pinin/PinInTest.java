@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import static me.towdium.pinin.PinyinKeyboard.DAQIAN;
+import static me.towdium.pinin.Keyboard.*;
 
 public class PinInTest {
     @Test
@@ -71,6 +71,30 @@ public class PinInTest {
         assert p.contains("测试文本", "hkgjp1");
         assert p.contains("錫", "vu6");
         assert p.contains("物質", "j456");
+    }
+
+    @Test
+    public void xiaohe() {
+        System.out.println("Test xiaohe");
+        PinIn p = new PinIn().config().keyboard(XIAOHE).commit();
+        assert p.contains("测试文本", "ceuiwfbf");
+        assert p.contains("测试文本", "ceuiwf2");
+        assert !p.contains("测试文本", "ceuiw2");
+        assert p.contains("合金炉", "hej");
+        assert p.contains("洗矿场", "xikl4");
+        assert p.contains("月球", "ytqq");
+    }
+
+    @Test
+    public void ziranma() {
+        System.out.println("Test ziranma");
+        PinIn p = new PinIn().config().keyboard(ZIRANMA).commit();
+        assert p.contains("测试文本", "ceuiwfbf");
+        assert p.contains("测试文本", "ceuiwf2");
+        assert !p.contains("测试文本", "ceuiw2");
+        assert p.contains("合金炉", "hej");
+        assert p.contains("洗矿场", "xikd4");
+        assert p.contains("月球", "ytqq");
     }
 
     @Test

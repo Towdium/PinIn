@@ -17,6 +17,7 @@ import java.util.List;
 public class Pinyin implements Element {
     private static String[][] data;
     private static final String[] EMPTY = new String[0];
+    boolean duo = false;
 
     static {
         data = new String[41000][];
@@ -59,8 +60,9 @@ public class Pinyin implements Element {
     public IndexSet match(String str, int start) {
         IndexSet ret = new IndexSet(0x1);
         ret = phonemes[0].match(str, ret, start);
-        for (int i = 1; i < phonemes.length; i++)
-            ret.merge(phonemes[i].match(str, ret, start));
+        if (duo) ret = phonemes[1].match(str, ret, start);
+        else ret.merge(phonemes[1].match(str, ret, start));
+        if (phonemes.length == 3) ret.merge(phonemes[2].match(str, ret, start));
         return ret;
     }
 
@@ -73,10 +75,11 @@ public class Pinyin implements Element {
 
     public void reload(String str, PinIn p) {
         List<Phoneme> l = new ArrayList<>();
-        for (String s : p.keyboard().separate(str)) {
+        for (String s : p.keyboard().split(str)) {
             Phoneme ph = p.genPhoneme(s);
             if (!ph.isEmpty()) l.add(ph);
         }
         phonemes = l.toArray(new Phoneme[]{});
+        duo = p.keyboard().duo;
     }
 }
