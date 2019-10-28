@@ -44,7 +44,7 @@ public static void main(String[] args) {
 
 更多示例参见 [测试代码][2]。
 
-#### 致谢
+## 致谢
 
 内置的拼音数据来自于 [地球拼音][3] 和 [pinyin-data][4]，感谢他们的工作
 
