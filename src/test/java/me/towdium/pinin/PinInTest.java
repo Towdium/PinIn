@@ -22,7 +22,7 @@ public class PinInTest {
         List<String> strs = new ArrayList<>();
         PinyinTree<Integer> tree = new PinyinTree<>(true, new PinIn());
         BufferedReader br = new BufferedReader(new InputStreamReader(
-                PinInTest.class.getResourceAsStream("examples.txt"), StandardCharsets.UTF_8));
+                PinInTest.class.getResourceAsStream("small.txt"), StandardCharsets.UTF_8));
         String line;
         while ((line = br.readLine()) != null) {
             if (line.isEmpty()) continue;
@@ -35,8 +35,9 @@ public class PinInTest {
 
         time = System.currentTimeMillis();
         Set<Integer> is = null;
-        for (int i = 0; i < 1000; i++) is = tree.search("hong2");
-        System.out.println("Index search time: " + (System.currentTimeMillis() - time) / 1000f);
+        int loop = 100;
+        for (int i = 0; i < loop; i++) is = tree.search("hong2");
+        System.out.println("Index search time: " + (System.currentTimeMillis() - time) / (float) loop);
 
         //for (Integer i: is) System.out.println(strs.get(i));
 
@@ -45,8 +46,15 @@ public class PinInTest {
         IntSet result = new IntOpenHashSet();
         for (int i = 0; i < strs.size(); i++)
             if (p.contains(strs.get(i), "hong2")) result.add(i);
-        assert result.equals(is);
         System.out.println("Loop search time: " + (System.currentTimeMillis() - time));
+        assert result.equals(is);
+
+        time = System.currentTimeMillis();
+        result = new IntOpenHashSet();
+        for (int i = 0; i < strs.size(); i++)
+            if (strs.get(i).contains("hong2")) result.add(i);
+        System.out.println("Contains search time: " + (System.currentTimeMillis() - time));
+
     }
 
     @Test
@@ -61,6 +69,8 @@ public class PinInTest {
         assert p.contains("合金炉", "hejinlu");
         assert p.contains("洗矿场", "xikuangchang");
         assert p.contains("流体", "liuti");
+        assert p.contains("轰20", "hong2");
+        assert p.contains("hong2", "hong2");
     }
 
     @Test
@@ -107,6 +117,8 @@ public class PinInTest {
         tree.put("合金炉", 2);
         tree.put("洗矿场", 3);
         tree.put("流体", 4);
+        tree.put("轰20", 7);
+        tree.put("hong2", 8);
 
         Set<Integer> s;
         s = tree.search("ceshiwenben");
@@ -131,6 +143,8 @@ public class PinInTest {
         assert s.size() == 2 && s.contains(5);
         s = tree.search("ceshiqiefenw");
         assert s.size() == 1 && s.contains(6);
+        s = tree.search("hong2");
+        assert s.contains(7) && s.contains(8);
     }
 
     @Test

@@ -28,7 +28,6 @@ public class PinyinTree<T> {
     Node root = new NDense();
     PinIn context;
     CharList chars = new CharArrayList();
-    IntList index = new IntArrayList();
     List<T> objects = new ObjectArrayList<>();
     Accelerator acc = new Accelerator();
     final boolean suffix;
@@ -54,7 +53,6 @@ public class PinyinTree<T> {
 
     public void put(String name, T identifier) {
         int pos = chars.size();
-        index.add(pos);
         for (char c : name.toCharArray()) {
             chars.add(c);
             context.genChar(c);
@@ -151,7 +149,7 @@ public class PinyinTree<T> {
                 for (int i = 0; i < data.size() / 2; i++) {
                     int ch = data.getInt(i * 2);
                     int obj = data.getInt(i * 2 + 1);
-                    if (p.chars.getChar(ch) == '\0') return;
+                    if (p.chars.getChar(ch) == '\0') continue;
                     if (p.acc.check(offset, ch, 0, p.context)) ret.add(obj);
                 }
             }
@@ -165,7 +163,7 @@ public class PinyinTree<T> {
 
         @Override
         public Node put(PinyinTree p, int name, int identifier) {
-            if (data.size() >= 512) {
+            if (data.size() >= 128) {
                 int pattern = data.getInt(0);
                 int common = Integer.MAX_VALUE;
                 for (int i = 0; i < data.size() / 2; i++) {
