@@ -23,11 +23,10 @@ public class Phoneme implements Element {
     public IndexSet match(String source, IndexSet idx, int start) {
         if (strs.length == 1 && strs[0].isEmpty()) return new IndexSet(idx);
         IndexSet ret = new IndexSet();
-        idx.traverse(i -> {
+        idx.foreach(i -> {
             IndexSet is = match(source, start + i);
             is.offset(i);
             ret.merge(is);
-            return true;
         });
         return ret;
     }

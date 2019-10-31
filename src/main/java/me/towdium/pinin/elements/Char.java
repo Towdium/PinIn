@@ -13,7 +13,10 @@ import java.util.Arrays;
  * Date: 29/04/19
  */
 public class Char implements Element {
-    private Element[] patterns = new Element[0];
+    Element[] patterns;
+
+    Char() {
+    }
 
     public Char(char ch, PinIn p) {
         ArrayList<Element> list = new ArrayList<>();
@@ -22,7 +25,7 @@ public class Char implements Element {
             Pinyin[] pinyin = Pinyin.get(ch, p);
             list.addAll(Arrays.asList(pinyin));
         }
-        patterns = list.toArray(patterns);
+        patterns = list.toArray(new Element[0]);
     }
 
     @Override
@@ -33,16 +36,7 @@ public class Char implements Element {
         return ret;
     }
 
-    private static class Raw implements Element {
-        private char ch;
-
-        Raw(char ch) {
-            this.ch = ch;
-        }
-
-        @Override
-        public IndexSet match(String str, int start) {
-            return str.charAt(start) == ch ? IndexSet.ONE : IndexSet.NONE;
-        }
+    public Element[] patterns() {
+        return patterns;
     }
 }

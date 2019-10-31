@@ -10,6 +10,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+import static me.towdium.pinin.PinIn.MAX;
+import static me.towdium.pinin.PinIn.MIN;
+
 /**
  * Author: Towdium
  * Date: 21/04/19
@@ -18,9 +21,10 @@ public class Pinyin implements Element {
     private static String[][] data;
     private static final String[] EMPTY = new String[0];
     boolean duo = false;
+    public final int id;
 
     static {
-        data = new String[41000][];
+        data = new String[MAX - MIN][];
         String resourceName = "data.txt";
         BufferedReader br = new BufferedReader(new InputStreamReader(
                 PinIn.class.getResourceAsStream(resourceName), StandardCharsets.UTF_8));
@@ -29,20 +33,21 @@ public class Pinyin implements Element {
             while ((line = br.readLine()) != null) {
                 char ch = line.charAt(0);
                 String sounds = line.substring(3);
-                data[ch] = sounds.split(", ");
+                data[ch - MIN] = sounds.split(", ");
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        for (int i = 0; i < 41000; i++)
+        for (int i = 0; i < data.length; i++)
             if (data[i] == null) data[i] = EMPTY;
     }
 
     private Phoneme[] phonemes;
 
-    public Pinyin(String str, PinIn p) {
+    public Pinyin(String str, PinIn p, int id) {
         reload(str, p);
+        this.id = id;
     }
 
     public Phoneme[] phonemes() {
@@ -50,7 +55,7 @@ public class Pinyin implements Element {
     }
 
     public static Pinyin[] get(char ch, PinIn p) {
-        String[] ss = data[(int) ch];
+        String[] ss = data[(int) ch - MIN];
         Pinyin[] ret = new Pinyin[ss.length];
         for (int i = 0; i < ss.length; i++)
             ret[i] = p.genPinyin(ss[i]);

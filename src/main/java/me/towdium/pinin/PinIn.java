@@ -3,14 +3,20 @@ package me.towdium.pinin;
 import me.towdium.pinin.elements.Char;
 import me.towdium.pinin.elements.Phoneme;
 import me.towdium.pinin.elements.Pinyin;
+import me.towdium.pinin.elements.Raw;
 import me.towdium.pinin.utils.Cache;
 import me.towdium.pinin.utils.Matcher;
 
 @SuppressWarnings("unused")
 public class PinIn {
+    public static final int MIN = 0x3000;
+    public static final int MAX = 0x9FFF;
+
+    private int total = 0;
+
     private Cache<String, Phoneme> cPhoneme = new Cache<>(s -> new Phoneme(s, this));
-    private Cache<String, Pinyin> cPinyin = new Cache<>(s -> new Pinyin(s, this));
-    private Cache<Character, Char> cChar = new Cache<>(s -> new Char(s, this));
+    private Cache<String, Pinyin> cPinyin = new Cache<>(s -> new Pinyin(s, this, total++));
+    private Char[] cChar = new Char[MAX - MIN];
 
     private Keyboard keyboard;
     private boolean fZh2Z;
@@ -55,7 +61,14 @@ public class PinIn {
     }
 
     public Char genChar(char c) {
-        return cChar.get(c);
+        if (Matcher.isChinese(c)) {
+            Char ret = cChar[c - MIN];
+            if (ret == null) {
+                ret = new Char(c, this);
+                cChar[c - MIN] = ret;
+            }
+            return ret;
+        } else return new Raw(c);
     }
 
     public static void initialize() {
@@ -97,6 +110,10 @@ public class PinIn {
 
     public Config config() {
         return new Config(this);
+    }
+
+    public int total() {
+        return total;
     }
 
     private void config(Config c) {

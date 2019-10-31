@@ -6,19 +6,19 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import me.towdium.pinin.elements.Char;
+import me.towdium.pinin.elements.Element;
 import me.towdium.pinin.elements.Phoneme;
 import me.towdium.pinin.elements.Pinyin;
 import me.towdium.pinin.utils.IndexSet;
 import me.towdium.pinin.utils.Matcher;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
-
-import static me.towdium.pinin.utils.Matcher.check;
-import static me.towdium.pinin.utils.Matcher.strCmp;
 
 /**
  * Author: Towdium
@@ -30,6 +30,7 @@ public class PinyinTree<T> {
     CharList chars = new CharArrayList();
     IntList index = new IntArrayList();
     List<T> objects = new ObjectArrayList<>();
+    Accelerator acc = new Accelerator();
     final boolean suffix;
 
     private int charsEnd(int start) {
@@ -54,7 +55,10 @@ public class PinyinTree<T> {
     public void put(String name, T identifier) {
         int pos = chars.size();
         index.add(pos);
-        for (char c : name.toCharArray()) chars.add(c);
+        for (char c : name.toCharArray()) {
+            chars.add(c);
+            context.genChar(c);
+        }
         chars.add('\0');
         for (int i = 0; i < (suffix ? name.length() : 1); i++)
             root = root.put(this, pos + i, objects.size());
@@ -62,8 +66,9 @@ public class PinyinTree<T> {
     }
 
     public Set<T> search(String s) {
+        acc.input(s);
         IntSet ret = new IntOpenHashSet();
-        root.get(this, ret, s, 0);
+        root.get(this, ret, 0);
         return ret.stream().map(i -> objects.get(i))
                 .collect(Collectors.toSet());
     }
@@ -73,7 +78,7 @@ public class PinyinTree<T> {
     }
 
     interface Node {
-        void get(PinyinTree p, IntSet ret, String name, int offset);
+        void get(PinyinTree p, IntSet ret, int offset);
 
         void get(PinyinTree p, IntSet ret);
 
@@ -90,8 +95,8 @@ public class PinyinTree<T> {
         }
 
         @Override
-        public void get(PinyinTree p, IntSet ret, String name, int offset) {
-            get(p, ret, name, offset, 0);
+        public void get(PinyinTree p, IntSet ret, int offset) {
+            get(p, ret, offset, 0);
         }
 
         @Override
@@ -123,14 +128,14 @@ public class PinyinTree<T> {
             end = offset;
         }
 
-        private void get(PinyinTree p, IntSet ret, String name, int offset, int start) {
+        private void get(PinyinTree p, IntSet ret, int offset, int start) {
             if (this.start + start == end)
-                exit.get(p, ret, name, offset);
-            else if (offset == name.length()) exit.get(p, ret);
+                exit.get(p, ret, offset);
+            else if (offset == p.acc.input.length()) exit.get(p, ret);
             else {
                 char ch = p.chars.getChar(this.start + start);
-                p.context.genChar(ch).match(name, offset).foreach(i ->
-                        get(p, ret, name, offset + i, start + 1));
+                p.acc.get(p.context.genChar(ch), offset).foreach(i ->
+                        get(p, ret, offset + i, start + 1));
             }
         }
     }
@@ -140,14 +145,14 @@ public class PinyinTree<T> {
         IntList data = new IntArrayList();
 
         @Override
-        public void get(PinyinTree p, IntSet ret, String name, int offset) {
-            if (name.length() == offset) get(p, ret);
+        public void get(PinyinTree p, IntSet ret, int offset) {
+            if (p.acc.input.length() == offset) get(p, ret);
             else {
                 for (int i = 0; i < data.size() / 2; i++) {
                     int ch = data.getInt(i * 2);
                     int obj = data.getInt(i * 2 + 1);
                     if (p.chars.getChar(ch) == '\0') return;
-                    if (check(name, offset, p.charsStr(ch), 0, p.context)) ret.add(obj);
+                    if (p.acc.check(offset, ch, 0, p.context)) ret.add(obj);
                 }
             }
         }
@@ -165,7 +170,7 @@ public class PinyinTree<T> {
                 int common = Integer.MAX_VALUE;
                 for (int i = 0; i < data.size() / 2; i++) {
                     int offset = data.getInt(i * 2);
-                    common = Math.min(common, strCmp(p.chars, pattern, offset));
+                    common = Math.min(common, Matcher.strCmp(p.chars, pattern, offset));
                     if (common == 0) break;
                 }
                 Node ret = new NSlice(pattern, pattern + common);
@@ -187,13 +192,13 @@ public class PinyinTree<T> {
         IntSet leaves = new IntArraySet(1);
 
         @Override
-        public void get(PinyinTree p, IntSet ret, String name, int offset) {
-            if (name.length() == offset) get(p, ret);
+        public void get(PinyinTree p, IntSet ret, int offset) {
+            if (p.acc.input.length() == offset) get(p, ret);
             else if (children != null && glue != null) {
-                Node n = children.get(name.charAt(offset));
-                if (n != null) n.get(p, ret, name, offset + 1);
-                glue.get(name, offset).forEach((c, is) -> is.foreach(i ->
-                        children.get(c.charValue()).get(p, ret, name, offset + i)));
+                Node n = children.get(p.acc.input.charAt(offset));
+                if (n != null) n.get(p, ret, offset + 1);
+                glue.get(p, offset).forEach((c, is) -> is.foreach(i ->
+                        children.get(c.charValue()).get(p, ret, offset + i)));
             }
         }
 
@@ -240,15 +245,15 @@ public class PinyinTree<T> {
         Map<Pinyin, CharSet> map = new Object2ObjectArrayMap<>();
         Map<Phoneme, Set<Pinyin>> index;
 
-        public Char2ObjectMap<IndexSet> get(String name, int offset) {
+        public Char2ObjectMap<IndexSet> get(PinyinTree t, int offset) {
             Char2ObjectMap<IndexSet> ret = new Char2ObjectArrayMap<>();
-            BiConsumer<Pinyin, CharSet> add = (p, cs) -> p.match(name, offset).foreach(i -> {
+            BiConsumer<Pinyin, CharSet> add = (p, cs) -> t.acc.get(p, offset).foreach(i -> {
                 for (char c : cs) ret.computeIfAbsent(c, k -> new IndexSet()).set(i);
             });
 
             if (index != null) {
                 index.forEach((ph, ps) -> {
-                    if (!ph.match(name, offset).isEmpty())
+                    if (!ph.match(t.acc.input, offset).isEmpty())
                         ps.forEach(p -> add.accept(p, map.get(p)));
                 });
             } else map.forEach(add);
@@ -279,6 +284,51 @@ public class PinyinTree<T> {
             index = new Object2ObjectArrayMap<>();
             map.forEach((p, cs) -> index.computeIfAbsent(p.phonemes()[0],
                     c -> new ObjectOpenHashSet<>()).add(p));
+        }
+    }
+
+    class Accelerator {
+        List<IndexSet[]> cache;
+        String input;
+
+        public void input(String s) {
+            input = s;
+            cache = new ArrayList<>();
+        }
+
+        public IndexSet get(Char c, int offset) {
+            IndexSet ret = new IndexSet();
+            for (Element p : c.patterns()) {
+                IndexSet is;
+                if (p instanceof Pinyin) is = get((Pinyin) p, offset);
+                else is = p.match(input, offset);
+                ret.merge(is);
+            }
+            return ret;
+        }
+
+        public IndexSet get(Pinyin p, int offset) {
+            for (int i = cache.size(); i <= offset; i++)
+                cache.add(new IndexSet[context.total()]);
+            IndexSet[] data = cache.get(offset);
+            IndexSet ret = data[p.id];
+            if (ret == null) {
+                ret = p.match(input, offset);
+                data[p.id] = ret;
+            }
+            return ret;
+        }
+
+        public boolean check(int offset, int s2, int start2, PinIn p) {
+            if (offset == input.length()) return true;
+
+            Char r = p.genChar(chars.getChar(s2 + start2));
+            IndexSet s = get(r, offset);
+
+            if (chars.getChar(s2 + start2 + 1) == '\0') {
+                int i = input.length() - offset;
+                return s.get(i);
+            } else return !s.traverse(i -> !check(offset + i, s2, start2 + 1, p));
         }
     }
 }

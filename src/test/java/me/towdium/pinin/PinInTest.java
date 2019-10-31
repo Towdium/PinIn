@@ -155,4 +155,8 @@ public class PinInTest {
         s = tree.search("ce4shi4w2ben");
         assert s.isEmpty();
     }
+
+    public static void main(String[] args) throws IOException {
+        new PinInTest().performance();
+    }
 }

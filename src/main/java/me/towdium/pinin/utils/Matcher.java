@@ -4,6 +4,9 @@ import it.unimi.dsi.fastutil.chars.CharList;
 import me.towdium.pinin.PinIn;
 import me.towdium.pinin.elements.Element;
 
+import static me.towdium.pinin.PinIn.MAX;
+import static me.towdium.pinin.PinIn.MIN;
+
 /**
  * Author: Towdium
  * Date: 21/04/19
@@ -17,7 +20,7 @@ public class Matcher {
     }
 
     public static boolean isChinese(char i) {
-        return 0x3007 <= i && i < 0x9FA5;
+        return MIN <= i && i < MAX;
     }
 
     public static int strCmp(String a, String b, int aStart) {
