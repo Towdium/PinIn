@@ -13,9 +13,8 @@ import static me.towdium.pinin.PinIn.MIN;
  */
 public class Matcher {
     public static boolean isChinese(CharSequence s) {
-        for (int i = s.length() - 1; i >= 0; i--) {
+        for (int i = s.length() - 1; i >= 0; i--)
             if (isChinese(s.charAt(i))) return true;
-        }
         return false;
     }
 
@@ -48,9 +47,8 @@ public class Matcher {
         if (s2 instanceof String) {
             if (s2.toString().isEmpty()) return true;
             else {
-                for (int i = 0; i < (full ? s1.length() : 1); i++) {
+                for (int i = 0; i < (full ? s1.length() : 1); i++)
                     if (check(s2.toString(), 0, s1, i, p)) return true;
-                }
                 return false;
             }
         } else return s1.contains(s2);

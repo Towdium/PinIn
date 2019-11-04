@@ -10,18 +10,25 @@ import java.util.stream.Collectors;
 
 public class CachedSearcher<T> extends SimpleSearcher<T> {
     IntSet all = new IntOpenHashSet();
+    int amount;
     LinkedHashMap<String, IntSet> cache = new LinkedHashMap<String, IntSet>() {
         @Override
         protected boolean removeEldestEntry(Map.Entry eldest) {
-            return size() >= 128;
+            return size() >= amount;
         }
     };
 
     public CachedSearcher(boolean suffix, PinIn context) {
+        this(suffix, context, 128);
+    }
+
+    public CachedSearcher(boolean suffix, PinIn context, int amount) {
         super(suffix, context);
+        this.amount = amount;
     }
 
     public void put(String name, T identifier) {
+        reset();
         all.add(strs.size());
         super.put(name, identifier);
     }

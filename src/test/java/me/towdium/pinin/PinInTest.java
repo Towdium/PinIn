@@ -21,9 +21,9 @@ public class PinInTest {
         System.out.println("Test performance");
         String search = "hong2";
         List<String> strs = new ArrayList<>();
-        Searcher<Integer> searcher = new SimpleSearcher<>(true, new PinIn());
+        Searcher<Integer> searcher = new CachedSearcher<>(true, new PinIn());
         BufferedReader br = new BufferedReader(new InputStreamReader(
-                PinInTest.class.getResourceAsStream("small.txt"), StandardCharsets.UTF_8));
+                PinInTest.class.getResourceAsStream("large.txt"), StandardCharsets.UTF_8));
         String line;
         while ((line = br.readLine()) != null) {
             if (line.isEmpty()) continue;
@@ -49,7 +49,7 @@ public class PinInTest {
         }
 
         time = System.currentTimeMillis();
-        int loop = 1000;
+        int loop = 10000;
         for (int i = 0; i < loop; i++) {
             is = searcher.search(search);
         }
@@ -60,17 +60,24 @@ public class PinInTest {
         time = System.currentTimeMillis();
         PinIn p = new PinIn();
         IntSet result = new IntOpenHashSet();
-        for (int i = 0; i < strs.size(); i++)
-            if (p.contains(strs.get(i), search)) result.add(i);
-        System.out.println("Loop search time: " + (System.currentTimeMillis() - time));
+        loop = 3;
+        for (int j = 0; j < loop; j++) {
+            for (int i = 0; i < strs.size(); i++) {
+                if (p.contains(strs.get(i), search)) result.add(i);
+            }
+        }
+        System.out.println("Loop search time: " + (System.currentTimeMillis() - time) / (float) loop);
         assert result.containsAll(is) && is.containsAll(result);
 
         time = System.currentTimeMillis();
         result = new IntOpenHashSet();
-        for (int i = 0; i < strs.size(); i++)
-            if (strs.get(i).contains("hong2")) result.add(i);
-        System.out.println("Contains search time: " + (System.currentTimeMillis() - time));
-
+        loop = 10;
+        for (int j = 0; j < loop; j++) {
+            for (int i = 0; i < strs.size(); i++) {
+                if (strs.get(i).contains("hong2")) result.add(i);
+            }
+        }
+        System.out.println("Contains search time: " + (System.currentTimeMillis() - time) / (float) loop);
     }
 
     @Test
