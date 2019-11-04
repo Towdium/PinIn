@@ -38,6 +38,7 @@ public class IndexSet {
         int v = value;
         for (int i = 0; i < 7; i++) {
             if ((v & 0x1) == 0x1 && !p.test(i)) return false;
+            else if (v == 0) return true;
             v >>= 1;
         }
         return true;
@@ -47,6 +48,7 @@ public class IndexSet {
         int v = value;
         for (int i = 0; i < 7; i++) {
             if ((v & 0x1) == 0x1) c.accept(i);
+            else if (v == 0) return;
             v >>= 1;
         }
     }

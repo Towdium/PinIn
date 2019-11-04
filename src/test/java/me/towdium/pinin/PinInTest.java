@@ -9,8 +9,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 import static me.towdium.pinin.Keyboard.*;
 
@@ -19,8 +19,9 @@ public class PinInTest {
     @SuppressWarnings({"UnusedAssignment", "unused"})
     public void performance() throws IOException {
         System.out.println("Test performance");
+        String search = "hong2";
         List<String> strs = new ArrayList<>();
-        PinyinTree<Integer> tree = new PinyinTree<>(true, new PinIn());
+        Searcher<Integer> searcher = new SimpleSearcher<>(true, new PinIn());
         BufferedReader br = new BufferedReader(new InputStreamReader(
                 PinInTest.class.getResourceAsStream("small.txt"), StandardCharsets.UTF_8));
         String line;
@@ -30,14 +31,29 @@ public class PinInTest {
         }
 
         long time = System.currentTimeMillis();
-        for (int i = 0; i < strs.size(); i++) tree.put(strs.get(i), i);
+        for (int i = 0; i < strs.size(); i++) {
+            searcher.put(strs.get(i), i);
+        }
         System.out.println("Construction time: " + (System.currentTimeMillis() - time));
 
+        Collection<Integer> is = null;
+        //noinspection ConstantConditions
+        if (searcher instanceof CachedSearcher) {
+            time = System.currentTimeMillis();
+            int loop = 100;
+            for (int i = 0; i < loop; i++) {
+                ((CachedSearcher) searcher).reset();
+                is = searcher.search(search);
+            }
+            System.out.println("Warm up time: " + (System.currentTimeMillis() - time) / (float) loop);
+        }
+
         time = System.currentTimeMillis();
-        Set<Integer> is = null;
-        int loop = 100;
-        for (int i = 0; i < loop; i++) is = tree.search("hong2");
-        System.out.println("Index search time: " + (System.currentTimeMillis() - time) / (float) loop);
+        int loop = 1000;
+        for (int i = 0; i < loop; i++) {
+            is = searcher.search(search);
+        }
+        System.out.println("Accelerated search time: " + (System.currentTimeMillis() - time) / (float) loop);
 
         //for (Integer i: is) System.out.println(strs.get(i));
 
@@ -45,9 +61,9 @@ public class PinInTest {
         PinIn p = new PinIn();
         IntSet result = new IntOpenHashSet();
         for (int i = 0; i < strs.size(); i++)
-            if (p.contains(strs.get(i), "hong2")) result.add(i);
+            if (p.contains(strs.get(i), search)) result.add(i);
         System.out.println("Loop search time: " + (System.currentTimeMillis() - time));
-        assert result.equals(is);
+        assert result.containsAll(is) && is.containsAll(result);
 
         time = System.currentTimeMillis();
         result = new IntOpenHashSet();
@@ -110,7 +126,7 @@ public class PinInTest {
     @Test
     public void tree() {
         System.out.println("Test tree");
-        PinyinTree<Integer> tree = new PinyinTree<>(true, new PinIn());
+        TreeSearcher<Integer> tree = new TreeSearcher<>(true, new PinIn());
         tree.put("测试文本", 1);
         tree.put("测试切分", 5);
         tree.put("测试切分文本", 6);
@@ -120,7 +136,7 @@ public class PinInTest {
         tree.put("轰20", 7);
         tree.put("hong2", 8);
 
-        Set<Integer> s;
+        Collection<Integer> s;
         s = tree.search("ceshiwenben");
         assert s.size() == 1 && s.contains(1);
         s = tree.search("ceshiwenbe");
@@ -150,10 +166,10 @@ public class PinInTest {
     @Test
     public void context() {
         PinIn p = new PinIn();
-        PinyinTree<Integer> tree = new PinyinTree<>(true, p);
+        TreeSearcher<Integer> tree = new TreeSearcher<>(true, p);
         tree.put("测试文本", 0);
         tree.put("测试文字", 3);
-        Set<Integer> s;
+        Collection<Integer> s;
         s = tree.search("ce4shi4w2ben");
         assert s.size() == 1 && s.contains(0);
         s = tree.search("ce4shw");
