@@ -1,6 +1,7 @@
 package me.towdium.pinin;
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntRBTreeSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import org.junit.jupiter.api.Test;
 
@@ -21,9 +22,9 @@ public class PinInTest {
         System.out.println("Test performance");
         String search = "hong2";
         List<String> strs = new ArrayList<>();
-        Searcher<Integer> searcher = new CachedSearcher<>(true, new PinIn());
+        Searcher<Integer> searcher = new TreeSearcher<>(true, new PinIn());
         BufferedReader br = new BufferedReader(new InputStreamReader(
-                PinInTest.class.getResourceAsStream("large.txt"), StandardCharsets.UTF_8));
+                PinInTest.class.getResourceAsStream("small.txt"), StandardCharsets.UTF_8));
         String line;
         while ((line = br.readLine()) != null) {
             if (line.isEmpty()) continue;
@@ -195,5 +196,16 @@ public class PinInTest {
 
     public static void main(String[] args) throws IOException {
         new PinInTest().performance();
+    }
+
+    @Test
+    public void temp() {
+        IntSet a = new IntRBTreeSet();
+        IntSet b = new IntOpenHashSet();
+        for (int i = 0; i < 100000; i++) {
+            a.add(i);
+            b.add(i);
+        }
+        int j = 0;
     }
 }

@@ -12,7 +12,6 @@ import me.towdium.pinin.utils.Accelerator;
 import me.towdium.pinin.utils.IndexSet;
 import me.towdium.pinin.utils.Matcher;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -74,9 +73,9 @@ public class TreeSearcher<T> implements Searcher<T> {
         objects.add(identifier);
     }
 
-    public Collection<T> search(String s) {
+    public List<T> search(String s) {
         acc.search(s);
-        IntSet ret = new IntOpenHashSet();
+        IntSet ret = new IntRBTreeSet();
         root.get(this, ret, 0);
         return ret.stream().map(i -> objects.get(i))
                 .collect(Collectors.toList());

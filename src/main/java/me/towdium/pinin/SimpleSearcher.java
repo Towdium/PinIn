@@ -3,7 +3,6 @@ package me.towdium.pinin;
 import me.towdium.pinin.utils.Accelerator;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public class SimpleSearcher<T> implements Searcher<T> {
@@ -37,7 +36,7 @@ public class SimpleSearcher<T> implements Searcher<T> {
     }
 
     @Override
-    public Collection<T> search(String name) {
+    public List<T> search(String name) {
         List<T> ret = new ArrayList<>();
         acc.search(name);
         for (int i = 0; i < strs.size(); i++)

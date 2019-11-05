@@ -1,6 +1,7 @@
 package me.towdium.pinin;
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntRBTreeSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 
 import java.util.LinkedHashMap;
@@ -41,7 +42,7 @@ public class CachedSearcher<T> extends SimpleSearcher<T> {
         IntSet ret;
         if (name.isEmpty()) return all;
         else if ((ret = cache.get(name)) == null) {
-            ret = new IntOpenHashSet();
+            ret = new IntRBTreeSet();
             IntSet is = generate(name.substring(0, name.length() - 1));
             acc.search(name);
             for (int i : is) if (acc.contains(strs.get(i), suffix)) ret.add(i);
