@@ -6,4 +6,6 @@ public interface Searcher<T> {
     void put(String name, T identifier);
 
     List<T> search(String name);
+
+    PinIn context();
 }

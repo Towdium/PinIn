@@ -7,6 +7,8 @@ import me.towdium.pinin.elements.Raw;
 import me.towdium.pinin.utils.Cache;
 import me.towdium.pinin.utils.Matcher;
 
+import java.util.WeakHashMap;
+
 @SuppressWarnings("unused")
 public class PinIn {
     public static final int MIN = 0x3000;
@@ -17,6 +19,7 @@ public class PinIn {
     private Cache<String, Phoneme> cPhoneme = new Cache<>(s -> new Phoneme(s, this));
     private Cache<String, Pinyin> cPinyin = new Cache<>(s -> new Pinyin(s, this, total++));
     private Char[] cChar = new Char[MAX - MIN];
+    private WeakHashMap<Object, Runnable> listeners = new WeakHashMap<>();
 
     private Keyboard keyboard;
     private boolean fZh2Z;
@@ -42,6 +45,10 @@ public class PinIn {
         this.fIng2In = fIng2In;
         this.fEng2En = fEng2En;
         this.fU2V = fU2V;
+    }
+
+    public void listen(Object owner, Runnable r) {
+        listeners.put(owner, r);
     }
 
     public boolean contains(String s1, CharSequence s2) {
@@ -127,6 +134,7 @@ public class PinIn {
         this.fU2V = c.fU2V;
         cPhoneme.foreach((s, p) -> p.reload(s, this));
         cPinyin.foreach((s, p) -> p.reload(s, this));
+        listeners.values().forEach(Runnable::run);
     }
 
     public static class Config {

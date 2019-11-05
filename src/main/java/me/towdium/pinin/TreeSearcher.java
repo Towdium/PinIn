@@ -12,6 +12,7 @@ import me.towdium.pinin.utils.Accelerator;
 import me.towdium.pinin.utils.IndexSet;
 import me.towdium.pinin.utils.Matcher;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,6 +28,7 @@ public class TreeSearcher<T> implements Searcher<T> {
 
     CharList chars = new CharArrayList();
     List<T> objects = new ObjectArrayList<>();
+    List<Glue> glues = new ArrayList<>();
     final Accelerator<CharList> acc;
     final PinIn context;
     final boolean suffix;
@@ -35,6 +37,10 @@ public class TreeSearcher<T> implements Searcher<T> {
         for (int i = start; ; i++) {
             if (chars.getChar(i) == '\0') return i;
         }
+    }
+
+    private void refresh() {
+        glues.forEach(Glue::refresh);
     }
 
     private String charsStr(int start) {
@@ -59,6 +65,7 @@ public class TreeSearcher<T> implements Searcher<T> {
                 return str.getChar(offset) == '\0';
             }
         };
+        context.listen(this, this::refresh);
     }
 
     public void put(String name, T identifier) {
@@ -196,7 +203,7 @@ public class TreeSearcher<T> implements Searcher<T> {
 
     public static class NMap<T> implements Node<T> {
         Char2ObjectMap<Node<T>> children;
-        Glue glue;
+        Glue<T> glue;
         IntSet leaves = new IntArraySet(1);
 
         @Override
@@ -223,7 +230,7 @@ public class TreeSearcher<T> implements Searcher<T> {
                     leaves = new IntOpenHashSet(leaves);
                 leaves.add(identifier);
             } else {
-                init();
+                init(p);
                 char ch = p.chars.getChar(name);
                 Node<T> sub = children.get(ch);
                 if (sub == null) put(p, ch, sub = new NDense<>());
@@ -233,25 +240,29 @@ public class TreeSearcher<T> implements Searcher<T> {
             return this;
         }
 
-        private void put(TreeSearcher p, char ch, Node<T> n) {
-            init();
+        private void put(TreeSearcher<T> p, char ch, Node<T> n) {
+            init(p);
             if (children.size() >= 32 && children instanceof Char2ObjectArrayMap)
                 children = new Char2ObjectOpenHashMap<>(children);
             children.put(ch, n);
             glue.put(ch, p);
         }
 
-        private void init() {
+        private void init(TreeSearcher<T> p) {
             if (children == null || glue == null) {
                 children = new Char2ObjectArrayMap<>();
-                glue = new Glue();
+                glue = new Glue<>(p);
             }
         }
     }
 
-    static class Glue {
+    static class Glue<T> {
         Map<Pinyin, CharSet> map = new Object2ObjectArrayMap<>();
         Map<Phoneme, Set<Pinyin>> index;
+
+        public Glue(TreeSearcher<T> p) {
+            p.glues.add(this);
+        }
 
         public Char2ObjectMap<IndexSet> get(TreeSearcher t, int offset) {
             Char2ObjectMap<IndexSet> ret = new Char2ObjectArrayMap<>();
@@ -292,6 +303,10 @@ public class TreeSearcher<T> implements Searcher<T> {
             index = new Object2ObjectArrayMap<>();
             map.forEach((p, cs) -> index.computeIfAbsent(p.phonemes()[0],
                     c -> new ObjectOpenHashSet<>()).add(p));
+        }
+
+        public void refresh() {
+            if (index != null) index();
         }
     }
 }

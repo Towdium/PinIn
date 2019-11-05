@@ -43,4 +43,9 @@ public class SimpleSearcher<T> implements Searcher<T> {
             if (acc.contains(strs.get(i), suffix)) ret.add(objs.get(i));
         return ret;
     }
+
+    @Override
+    public PinIn context() {
+        return context;
+    }
 }
