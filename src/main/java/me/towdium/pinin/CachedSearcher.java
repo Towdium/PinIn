@@ -26,6 +26,7 @@ public class CachedSearcher<T> extends SimpleSearcher<T> {
     public CachedSearcher(boolean suffix, PinIn context, int amount) {
         super(suffix, context);
         this.amount = amount;
+        context.listen(this, this::reset);
     }
 
     public void put(String name, T identifier) {
