@@ -3,20 +3,16 @@ package me.towdium.pinin;
 import it.unimi.dsi.fastutil.chars.*;
 import it.unimi.dsi.fastutil.ints.*;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import me.towdium.pinin.elements.Phoneme;
 import me.towdium.pinin.elements.Pinyin;
 import me.towdium.pinin.utils.Accelerator;
-import me.towdium.pinin.utils.IndexSet;
 import me.towdium.pinin.utils.Matcher;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.function.BiConsumer;
+import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
 
 /**
@@ -25,13 +21,13 @@ import java.util.stream.Collectors;
  */
 public class TreeSearcher<T> implements Searcher<T> {
     Node<T> root = new NDense<>();
-
     CharList chars = new CharArrayList();
     List<T> objects = new ObjectArrayList<>();
-    List<Glue> glues = new ArrayList<>();
+    List<NAcc<T>> naccs = new ArrayList<>();
     final Accelerator<CharList> acc;
     final PinIn context;
     final boolean suffix;
+    static final int THRESHOLD = 256;
 
     private int charsEnd(int start) {
         for (int i = start; ; i++) {
@@ -40,7 +36,7 @@ public class TreeSearcher<T> implements Searcher<T> {
     }
 
     private void refresh() {
-        glues.forEach(Glue::refresh);
+        naccs.forEach(i -> i.reload(this));
     }
 
     private String charsStr(int start) {
@@ -133,11 +129,11 @@ public class TreeSearcher<T> implements Searcher<T> {
 
         private void cut(TreeSearcher<T> p, int offset) {
             NMap<T> insert = new NMap<>();
-            if (offset + 1 == end) insert.put(p, p.chars.getChar(offset), exit);
+            if (offset + 1 == end) insert.put(p.chars.getChar(offset), exit);
             else {
                 NSlice<T> half = new NSlice<>(offset + 1, end);
                 half.exit = exit;
-                insert.put(p, p.chars.getChar(offset), half);
+                insert.put(p.chars.getChar(offset), half);
             }
             exit = insert;
             end = offset;
@@ -180,7 +176,7 @@ public class TreeSearcher<T> implements Searcher<T> {
 
         @Override
         public Node<T> put(TreeSearcher<T> p, int name, int identifier) {
-            if (data.size() >= 128) {
+            if (data.size() >= THRESHOLD) {
                 int pattern = data.getInt(0);
                 int common = Integer.MAX_VALUE;
                 for (int i = 0; i < data.size() / 2; i++) {
@@ -203,17 +199,14 @@ public class TreeSearcher<T> implements Searcher<T> {
 
     public static class NMap<T> implements Node<T> {
         Char2ObjectMap<Node<T>> children;
-        Glue<T> glue;
         IntSet leaves = new IntArraySet(1);
 
         @Override
         public void get(TreeSearcher<T> p, IntSet ret, int offset) {
             if (p.acc.search().length() == offset) get(p, ret);
-            else if (children != null && glue != null) {
-                Node<T> n = children.get(p.acc.search().charAt(offset));
-                if (n != null) n.get(p, ret, offset + 1);
-                glue.get(p, offset).forEach((c, is) -> is.foreach(i ->
-                        children.get(c.charValue()).get(p, ret, offset + i)));
+            else if (children != null) {
+                children.forEach((c, n) -> p.acc.get(p.context.genChar(c), offset)
+                        .foreach(i -> n.get(p, ret, offset + i)));
             }
         }
 
@@ -226,87 +219,80 @@ public class TreeSearcher<T> implements Searcher<T> {
         @Override
         public NMap<T> put(TreeSearcher<T> p, int name, int identifier) {
             if (p.chars.getChar(name) == '\0') {
-                if (leaves.size() >= 32 && leaves instanceof IntArraySet)
+                if (leaves.size() >= THRESHOLD && leaves instanceof IntArraySet)
                     leaves = new IntOpenHashSet(leaves);
                 leaves.add(identifier);
             } else {
-                init(p);
+                init();
                 char ch = p.chars.getChar(name);
                 Node<T> sub = children.get(ch);
-                if (sub == null) put(p, ch, sub = new NDense<>());
+                if (sub == null) put(ch, sub = new NDense<>());
                 sub = sub.put(p, name + 1, identifier);
                 children.put(ch, sub);
             }
-            return this;
+            return !(this instanceof NAcc) && children != null && children.size() > 32 ?
+                    new NAcc<>(p, this) : this;
         }
 
-        private void put(TreeSearcher<T> p, char ch, Node<T> n) {
-            init(p);
-            if (children.size() >= 32 && children instanceof Char2ObjectArrayMap)
+        private void put(char ch, Node<T> n) {
+            init();
+            if (children.size() >= THRESHOLD && children instanceof Char2ObjectArrayMap)
                 children = new Char2ObjectOpenHashMap<>(children);
             children.put(ch, n);
-            glue.put(ch, p);
         }
 
-        private void init(TreeSearcher<T> p) {
-            if (children == null || glue == null) {
-                children = new Char2ObjectArrayMap<>();
-                glue = new Glue<>(p);
-            }
+        private void init() {
+            if (children == null) children = new Char2ObjectArrayMap<>();
         }
     }
 
-    static class Glue<T> {
-        Map<Pinyin, CharSet> map = new Object2ObjectArrayMap<>();
-        Map<Phoneme, Set<Pinyin>> index;
+    public static class NAcc<T> extends NMap<T> {
+        Map<Phoneme, CharSet> index = new Object2ObjectArrayMap<>();
 
-        public Glue(TreeSearcher<T> p) {
-            p.glues.add(this);
+        private NAcc(TreeSearcher<T> p, NMap<T> n) {
+            children = n.children;
+            leaves = n.leaves;
+            reload(p);
+            p.naccs.add(this);
         }
 
-        public Char2ObjectMap<IndexSet> get(TreeSearcher t, int offset) {
-            Char2ObjectMap<IndexSet> ret = new Char2ObjectArrayMap<>();
-            BiConsumer<Pinyin, CharSet> add = (p, cs) -> t.acc.get(p, offset).foreach(i -> {
-                for (char c : cs) ret.computeIfAbsent(c, k -> new IndexSet()).set(i);
-            });
-
-            if (index != null) {
-                index.forEach((ph, ps) -> {
-                    if (!ph.match(t.acc.search(), offset).isEmpty())
-                        ps.forEach(p -> add.accept(p, map.get(p)));
-                });
-            } else map.forEach(add);
-            return ret;
-        }
-
-        public void put(char ch, TreeSearcher pi) {
-            if (!Matcher.isChinese(ch)) return;
-            for (Pinyin p : Pinyin.get(ch, pi.context)) {
-                map.compute(p, (py, cs) -> {
-                    if (cs == null) {
-                        cs = new CharArraySet(1);
-                        if (index != null) index.computeIfAbsent(py.phonemes()[0],
-                                c -> new ObjectOpenHashSet<>()).add(py);
-                    } else if (cs.size() >= 32 && cs instanceof CharArraySet)
-                        cs = new CharOpenHashSet(cs);
-                    cs.add(ch);
-                    return cs;
+        @Override
+        public void get(TreeSearcher<T> p, IntSet ret, int offset) {
+            if (p.acc.search().length() == offset) get(p, ret);
+            else {
+                Node<T> n = children.get(p.acc.search().charAt(offset));
+                if (n != null) n.get(p, ret, offset + 1);
+                index.forEach((k, v) -> {
+                    if (!k.match(p.acc.search(), offset).isEmpty()) {
+                        v.forEach((IntConsumer) i -> p.acc.get(p.context.genChar((char) i), offset)
+                                .foreach(j -> children.get((char) i).get(p, ret, offset + j)));
+                    }
                 });
             }
-            if (map.size() >= 32 && index == null) {
-                map = new Object2ObjectOpenHashMap<>(map);
-                index();
+        }
+
+        @Override
+        public NAcc<T> put(TreeSearcher<T> p, int name, int identifier) {
+            super.put(p, name, identifier);
+            index(p, p.chars.getChar(name));
+            return this;
+        }
+
+        public void reload(TreeSearcher<T> p) {
+            index.clear();
+            children.keySet().forEach((IntConsumer) i -> index(p, (char) i));
+        }
+
+        private void index(TreeSearcher<T> p, char c) {
+            if (!Matcher.isChinese(c)) return;
+            for (Pinyin py : Pinyin.get(c, p.context)) {
+                index.compute(py.phonemes()[0], (j, cs) -> {
+                    if (cs == null) return new CharArraySet();
+                    else if (cs instanceof CharArraySet && cs.size() >= THRESHOLD && !cs.contains(c))
+                        return new CharOpenHashSet(cs);
+                    else return cs;
+                }).add(c);
             }
-        }
-
-        public void index() {
-            index = new Object2ObjectArrayMap<>();
-            map.forEach((p, cs) -> index.computeIfAbsent(p.phonemes()[0],
-                    c -> new ObjectOpenHashSet<>()).add(p));
-        }
-
-        public void refresh() {
-            if (index != null) index();
         }
     }
 }
