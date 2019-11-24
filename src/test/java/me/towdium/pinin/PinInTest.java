@@ -19,11 +19,11 @@ public class PinInTest {
     @SuppressWarnings({"UnusedAssignment", "unused"})
     public void performance() throws IOException {
         System.out.println("Test performance");
-        String search = "hong2";
+        String search = "yangmao";
         List<String> strs = new ArrayList<>();
-        Searcher<Integer> searcher = new TreeSearcher<>(true, new PinIn());
+        Searcher<Integer> searcher = new CachedSearcher<>(true, new PinIn());
         BufferedReader br = new BufferedReader(new InputStreamReader(
-                PinInTest.class.getResourceAsStream("small.txt"), StandardCharsets.UTF_8));
+                PinInTest.class.getResourceAsStream("large.txt"), StandardCharsets.UTF_8));
         String line;
         while ((line = br.readLine()) != null) {
             if (line.isEmpty()) continue;
@@ -46,10 +46,21 @@ public class PinInTest {
                 is = searcher.search(search);
             }
             System.out.println("Warm up time: " + (System.currentTimeMillis() - time) / (float) loop);
+            searcher.search("jiqi");
+            searcher.search("yangmao");
+            searcher.search("yunshanmuban");
+            searcher.search("hongshi");
+            searcher.search("xianlan");
+            searcher.search("kuangjia");
+            searcher.search("lvse");
+            searcher.search("niantu");
+            searcher.search("yangmao");
+            searcher.search("hunningtu");
+            System.out.println("Test search completed.");
         }
 
         time = System.currentTimeMillis();
-        int loop = 10000;
+        int loop = 1000;
         for (int i = 0; i < loop; i++) {
             is = searcher.search(search);
         }

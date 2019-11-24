@@ -21,56 +21,27 @@ import java.util.stream.Collectors;
  */
 public class TreeSearcher<T> implements Searcher<T> {
     Node<T> root = new NDense<>();
-    CharList chars = new CharArrayList();
+
     List<T> objects = new ObjectArrayList<>();
     List<NAcc<T>> naccs = new ArrayList<>();
-    final Accelerator<CharList> acc;
+    final Accelerator acc;
     final PinIn context;
     final boolean suffix;
-    static final int THRESHOLD = 256;
-
-    private int charsEnd(int start) {
-        for (int i = start; ; i++) {
-            if (chars.getChar(i) == '\0') return i;
-        }
-    }
+    static final int THRESHOLD = 128;
 
     private void refresh() {
         naccs.forEach(i -> i.reload(this));
     }
 
-    private String charsStr(int start) {
-        return charsStr(start, charsEnd(start));
-    }
-
-    private String charsStr(int start, int end) {
-        return new String(chars.subList(start, end).toCharArray());
-    }
-
     public TreeSearcher(boolean suffix, PinIn context) {
         this.suffix = suffix;
         this.context = context;
-        acc = new Accelerator<CharList>(context) {
-            @Override
-            protected char get(CharList str, int offset) {
-                return str.getChar(offset);
-            }
-
-            @Override
-            protected boolean end(CharList str, int offset) {
-                return str.getChar(offset) == '\0';
-            }
-        };
+        acc = new Accelerator(context);
         context.listen(this, this::refresh);
     }
 
     public void put(String name, T identifier) {
-        int pos = chars.size();
-        for (char c : name.toCharArray()) {
-            chars.add(c);
-            context.genChar(c);
-        }
-        chars.add('\0');
+        int pos = acc.put(name);
         for (int i = 0; i < (suffix ? name.length() : 1); i++)
             root = root.put(this, pos + i, objects.size());
         objects.add(identifier);
@@ -118,7 +89,7 @@ public class TreeSearcher<T> implements Searcher<T> {
         @Override
         public Node<T> put(TreeSearcher<T> p, int name, int identifier) {
             int length = end - start;
-            int match = Matcher.strCmp(p.charsStr(start, end), p.charsStr(name), 0, 0, length);
+            int match = p.acc.match(start, name, length);
             if (match >= length) exit = exit.put(p, name + length, identifier);
             else {
                 cut(p, start + match);
@@ -129,11 +100,11 @@ public class TreeSearcher<T> implements Searcher<T> {
 
         private void cut(TreeSearcher<T> p, int offset) {
             NMap<T> insert = new NMap<>();
-            if (offset + 1 == end) insert.put(p.chars.getChar(offset), exit);
+            if (offset + 1 == end) insert.put(p.acc.get(offset), exit);
             else {
                 NSlice<T> half = new NSlice<>(offset + 1, end);
                 half.exit = exit;
-                insert.put(p.chars.getChar(offset), half);
+                insert.put(p.acc.get(offset), half);
             }
             exit = insert;
             end = offset;
@@ -144,7 +115,7 @@ public class TreeSearcher<T> implements Searcher<T> {
                 exit.get(p, ret, offset);
             else if (offset == p.acc.search().length()) exit.get(p, ret);
             else {
-                char ch = p.chars.getChar(this.start + start);
+                char ch = p.acc.get(this.start + start);
                 p.acc.get(p.context.genChar(ch), offset).foreach(i ->
                         get(p, ret, offset + i, start + 1));
             }
@@ -162,8 +133,8 @@ public class TreeSearcher<T> implements Searcher<T> {
                 for (int i = 0; i < data.size() / 2; i++) {
                     int ch = data.getInt(i * 2);
                     int obj = data.getInt(i * 2 + 1);
-                    if (p.chars.getChar(ch) == '\0') continue;
-                    if (p.acc.check(offset, p.chars, ch)) ret.add(obj);
+                    if (p.acc.get(ch) == '\0') continue;
+                    if (p.acc.check(offset, ch)) ret.add(obj);
                 }
             }
         }
@@ -181,7 +152,7 @@ public class TreeSearcher<T> implements Searcher<T> {
                 int common = Integer.MAX_VALUE;
                 for (int i = 0; i < data.size() / 2; i++) {
                     int offset = data.getInt(i * 2);
-                    common = Math.min(common, Matcher.strCmp(p.chars, pattern, offset));
+                    common = Math.min(common, p.acc.match(pattern, offset, Integer.MAX_VALUE));
                     if (common == 0) break;
                 }
                 Node<T> ret = new NSlice<>(pattern, pattern + common);
@@ -218,13 +189,13 @@ public class TreeSearcher<T> implements Searcher<T> {
 
         @Override
         public NMap<T> put(TreeSearcher<T> p, int name, int identifier) {
-            if (p.chars.getChar(name) == '\0') {
+            if (p.acc.get(name) == '\0') {
                 if (leaves.size() >= THRESHOLD && leaves instanceof IntArraySet)
                     leaves = new IntOpenHashSet(leaves);
                 leaves.add(identifier);
             } else {
                 init();
-                char ch = p.chars.getChar(name);
+                char ch = p.acc.get(name);
                 Node<T> sub = children.get(ch);
                 if (sub == null) put(ch, sub = new NDense<>());
                 sub = sub.put(p, name + 1, identifier);
@@ -274,7 +245,7 @@ public class TreeSearcher<T> implements Searcher<T> {
         @Override
         public NAcc<T> put(TreeSearcher<T> p, int name, int identifier) {
             super.put(p, name, identifier);
-            index(p, p.chars.getChar(name));
+            index(p, p.acc.get(name));
             return this;
         }
 

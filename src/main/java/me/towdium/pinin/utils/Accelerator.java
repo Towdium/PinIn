@@ -1,5 +1,9 @@
 package me.towdium.pinin.utils;
 
+import it.unimi.dsi.fastutil.chars.CharArrayList;
+import it.unimi.dsi.fastutil.chars.CharList;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import me.towdium.pinin.PinIn;
 import me.towdium.pinin.elements.Char;
 import me.towdium.pinin.elements.Element;
@@ -8,14 +12,20 @@ import me.towdium.pinin.elements.Pinyin;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class Accelerator<T> {
+public class Accelerator {
     final PinIn context;
     List<IndexSet[]> cache;
     String search;
+    CharList chars = new CharArrayList();
+    IntList strs = new IntArrayList();
 
-    protected abstract char get(T str, int offset);
+    public char get(int offset) {
+        return chars.getChar(offset);
+    }
 
-    protected abstract boolean end(T str, int offset);
+    public boolean end(int offset) {
+        return chars.getChar(offset) == '\0';
+    }
 
     public Accelerator(PinIn context) {
         this.context = context;
@@ -49,21 +59,21 @@ public abstract class Accelerator<T> {
         return ret;
     }
 
-    public boolean check(int offset, T s2, int start2) {
+    public boolean check(int offset, int start2) {
         if (offset == search.length()) return true;
 
-        Char r = context.genChar(get(s2, start2));
+        Char r = context.genChar(get(start2));
         IndexSet s = get(r, offset);
 
-        if (end(s2, start2 + 1)) {
+        if (end(start2 + 1)) {
             int i = search.length() - offset;
             return s.get(i);
-        } else return !s.traverse(i -> !check(offset + i, s2, start2 + 1));
+        } else return !s.traverse(i -> !check(offset + i, start2 + 1));
     }
 
-    public boolean contains(T s1, boolean full) {
-        for (int i = 0; full ? !end(s1, i) : i == 0; i++) {
-            if (check(0, s1, i)) return true;
+    public boolean contains(int offset, boolean full) {
+        for (int i = offset; full ? !end(i) : i == 0; i++) {
+            if (check(0, i)) return true;
         }
         return false;
     }
@@ -72,7 +82,26 @@ public abstract class Accelerator<T> {
         return search;
     }
 
-    public void initialize(String s) {
-        for (char c : s.toCharArray()) context.genChar(c);
+    public int put(String s) {
+        strs.add(chars.size());
+        for (char c : s.toCharArray()) {
+            chars.add(c);
+            context.genChar(c);
+        }
+        chars.add('\0');
+        return strs.getInt(strs.size() - 1);
+    }
+
+    public int match(int s1, int s2, int max) {
+        for (int i = 0; ; i++) {
+            if (i >= max) return max;
+            char a = get(s1 + i);
+            char b = get(s2 + i);
+            if (a != b || a == '\0') return i;
+        }
+    }
+
+    public IntList strs() {
+        return strs;
     }
 }
