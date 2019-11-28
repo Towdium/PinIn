@@ -72,7 +72,7 @@ public class Accelerator {
     }
 
     public boolean contains(int offset, boolean full) {
-        for (int i = offset; full ? !end(i) : i == 0; i++) {
+        for (int i = offset; full ? !end(i) : i == offset; i++) {
             if (check(0, i)) return true;
         }
         return false;

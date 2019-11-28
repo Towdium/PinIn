@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Supplier;
 
 import static me.towdium.pinin.Keyboard.*;
 
@@ -18,77 +19,117 @@ public class PinInTest {
     @Test
     @SuppressWarnings({"UnusedAssignment", "unused"})
     public void performance() throws IOException {
+        List<String> search = new ArrayList<>();
+        search.add("boli");
+        search.add("yangmao");
+        search.add("hongse");
+        boolean suffix = false;
+        Supplier<Searcher<Integer>> supplier = () -> new TreeSearcher<>(suffix, new PinIn());
+        String source = "large";
         System.out.println("Test performance");
-        String search = "yangmao";
         List<String> strs = new ArrayList<>();
-        Searcher<Integer> searcher = new CachedSearcher<>(true, new PinIn());
+        Searcher<Integer> searcher = null;
         BufferedReader br = new BufferedReader(new InputStreamReader(
-                PinInTest.class.getResourceAsStream("large.txt"), StandardCharsets.UTF_8));
+                PinInTest.class.getResourceAsStream(source + ".txt"), StandardCharsets.UTF_8));
         String line;
         while ((line = br.readLine()) != null) {
             if (line.isEmpty()) continue;
             strs.add(line);
         }
 
+        int loop = 10;
         long time = System.currentTimeMillis();
-        for (int i = 0; i < strs.size(); i++) {
-            searcher.put(strs.get(i), i);
-        }
-        System.out.println("Construction time: " + (System.currentTimeMillis() - time));
-
-        Collection<Integer> is = null;
-        //noinspection ConstantConditions
-        if (searcher instanceof CachedSearcher) {
-            time = System.currentTimeMillis();
-            int loop = 100;
-            for (int i = 0; i < loop; i++) {
-                ((CachedSearcher) searcher).reset();
-                is = searcher.search(search);
-            }
-            System.out.println("Warm up time: " + (System.currentTimeMillis() - time) / (float) loop);
-            searcher.search("jiqi");
-            searcher.search("yangmao");
-            searcher.search("yunshanmuban");
-            searcher.search("hongshi");
-            searcher.search("xianlan");
-            searcher.search("kuangjia");
-            searcher.search("lvse");
-            searcher.search("niantu");
-            searcher.search("yangmao");
-            searcher.search("hunningtu");
-            System.out.println("Test search completed.");
-        }
-
-        time = System.currentTimeMillis();
-        int loop = 1000;
         for (int i = 0; i < loop; i++) {
-            is = searcher.search(search);
-        }
-        System.out.println("Accelerated search time: " + (System.currentTimeMillis() - time) / (float) loop);
-
-        //for (Integer i: is) System.out.println(strs.get(i));
-
-        time = System.currentTimeMillis();
-        PinIn p = new PinIn();
-        IntSet result = new IntOpenHashSet();
-        loop = 3;
-        for (int j = 0; j < loop; j++) {
-            for (int i = 0; i < strs.size(); i++) {
-                if (p.contains(strs.get(i), search)) result.add(i);
+            searcher = supplier.get();
+            for (int j = 0; j < strs.size(); j++) {
+                searcher.put(strs.get(j), j);
             }
         }
-        System.out.println("Loop search time: " + (System.currentTimeMillis() - time) / (float) loop);
-        assert result.containsAll(is) && is.containsAll(result);
 
-        time = System.currentTimeMillis();
-        result = new IntOpenHashSet();
-        loop = 10;
-        for (int j = 0; j < loop; j++) {
-            for (int i = 0; i < strs.size(); i++) {
-                if (strs.get(i).contains("hong2")) result.add(i);
+        System.out.println("Construction time: " + (System.currentTimeMillis() - time) / (float) loop);
+
+        float warm = 0;
+        float acc = 0;
+        float traverse = 0;
+        float contains = 0;
+
+        for (String s : search) {
+            List<Integer> is = null;
+            float t;
+            //noinspection ConstantConditions
+            if (searcher instanceof CachedSearcher) {
+                time = System.currentTimeMillis();
+                loop = 100;
+                for (int i = 0; i < loop; i++) {
+                    ((CachedSearcher) searcher).reset();
+                    is = searcher.search(s);
+                }
+                t = (System.currentTimeMillis() - time) / (float) loop;
+                warm += t;
+                System.out.println("Warm up time: " + t);
+                searcher.search("jiqi");
+                searcher.search("yangmao");
+                searcher.search("yunshanmuban");
+                searcher.search("hongshi");
+                searcher.search("xianlan");
+                searcher.search("kuangjia");
+                searcher.search("lvse");
+                searcher.search("niantu");
+                searcher.search("yangmao");
+                searcher.search("hunningtu");
+                System.out.println("Test search completed.");
             }
+
+            time = System.currentTimeMillis();
+            loop = 10000;
+            //noinspection ConstantConditions
+            if (searcher instanceof SimpleSearcher) loop /= 100;
+            for (int i = 0; i < loop; i++) {
+                is = searcher.search(s);
+            }
+            t = (System.currentTimeMillis() - time) / (float) loop;
+            acc += t;
+            System.out.println("Accelerated search time: " + t);
+
+            //for (Integer i: is) System.out.println(strs.get(i));
+
+            time = System.currentTimeMillis();
+            PinIn p = new PinIn();
+            IntSet result = new IntOpenHashSet();
+            loop = 3;
+            for (int j = 0; j < loop; j++) {
+                for (int i = 0; i < strs.size(); i++) {
+                    String k = strs.get(i);
+                    //noinspection ConstantConditions
+                    if (suffix ? p.contains(k, s) : p.begins(k, s)) result.add(i);
+                }
+            }
+            t = (System.currentTimeMillis() - time) / (float) loop;
+            traverse += t;
+            System.out.println("Loop search time: " + t);
+            assert is != null && result.containsAll(is) && is.containsAll(result);
+
+            time = System.currentTimeMillis();
+            result = new IntOpenHashSet();
+            loop = 10;
+            for (int j = 0; j < loop; j++) {
+                for (int i = 0; i < strs.size(); i++) {
+                    String k = strs.get(i);
+                    //noinspection ConstantConditions
+                    if (suffix ? k.contains(s) : k.startsWith(s)) result.add(i);
+                }
+            }
+            t = (System.currentTimeMillis() - time) / (float) loop;
+            contains += t;
+            System.out.println("Contains search time: " + t);
         }
-        System.out.println("Contains search time: " + (System.currentTimeMillis() - time) / (float) loop);
+        if (search.size() == 1) return;
+        //noinspection ConstantConditions
+        if (searcher instanceof CachedSearcher)
+            System.out.println("Average warm up time: " + warm / search.size());
+        System.out.println("Average accelerated search time: " + acc / search.size());
+        System.out.println("Average loop search time: " + traverse / search.size());
+        System.out.println("Average contains search time: " + contains / search.size());
     }
 
     @Test

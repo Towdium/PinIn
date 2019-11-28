@@ -34,12 +34,13 @@ public class Matcher {
     }
 
     public static boolean check(String s1, CharSequence s2, PinIn p, boolean full) {
-        if (!Matcher.isChinese(s1)) return s1.contains(s2);
+        String ss2 = s2.toString();
+        if (!Matcher.isChinese(s1)) return full ? s1.contains(s2) : s1.startsWith(ss2);
         if (s2 instanceof String) {
-            if (s2.toString().isEmpty()) return true;
+            if (ss2.isEmpty()) return true;
             else {
                 for (int i = 0; i < (full ? s1.length() : 1); i++)
-                    if (check(s2.toString(), 0, s1, i, p)) return true;
+                    if (check(ss2, 0, s1, i, p)) return true;
                 return false;
             }
         } else return s1.contains(s2);

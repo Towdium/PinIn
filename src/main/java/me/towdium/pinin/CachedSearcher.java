@@ -20,7 +20,7 @@ public class CachedSearcher<T> extends SimpleSearcher<T> {
     };
 
     private int max() {
-        return (int) (scale * ((suffix ? total : all.size()) / 2048 + 16));
+        return (int) (scale * ((suffix ? 16f * total / all.size() : 16) + 16));
     }
 
     public CachedSearcher(boolean suffix, PinIn context) {
