@@ -23,9 +23,9 @@ public class PinInTest {
         search.add("boli");
         search.add("yangmao");
         search.add("hongse");
-        boolean suffix = false;
+        boolean suffix = true;
         Supplier<Searcher<Integer>> supplier = () -> new TreeSearcher<>(suffix, new PinIn());
-        String source = "large";
+        String source = "small";
         System.out.println("Test performance");
         List<String> strs = new ArrayList<>();
         Searcher<Integer> searcher = null;
@@ -36,6 +36,7 @@ public class PinInTest {
             if (line.isEmpty()) continue;
             strs.add(line);
         }
+        String full = String.join("", strs);
 
         int loop = 10;
         long time = System.currentTimeMillis();
@@ -44,6 +45,7 @@ public class PinInTest {
             for (int j = 0; j < strs.size(); j++) {
                 searcher.put(strs.get(j), j);
             }
+            //searcher.put(full, 0);
         }
 
         System.out.println("Construction time: " + (System.currentTimeMillis() - time) / (float) loop);

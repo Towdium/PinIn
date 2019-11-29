@@ -149,13 +149,7 @@ public class TreeSearcher<T> implements Searcher<T> {
         public Node<T> put(TreeSearcher<T> p, int name, int identifier) {
             if (data.size() >= THRESHOLD) {
                 int pattern = data.getInt(0);
-                int common = Integer.MAX_VALUE;
-                for (int i = 0; i < data.size() / 2; i++) {
-                    int offset = data.getInt(i * 2);
-                    common = Math.min(common, p.acc.match(pattern, offset, Integer.MAX_VALUE));
-                    if (common == 0) break;
-                }
-                Node<T> ret = new NSlice<>(pattern, pattern + common);
+                Node<T> ret = new NSlice<>(pattern, pattern + match(p));
                 for (int j = 0; j < data.size() / 2; j++)
                     ret.put(p, data.getInt(j * 2), data.getInt(j * 2 + 1));
                 ret.put(p, name, identifier);
@@ -164,6 +158,16 @@ public class TreeSearcher<T> implements Searcher<T> {
                 data.add(name);
                 data.add(identifier);
                 return this;
+            }
+        }
+
+        public int match(TreeSearcher<T> p) {
+            for (int i = 0; ; i++) {
+                char a = p.acc.get(data.getInt(0) + i);
+                for (int j = 1; j < data.size() / 2; j++) {
+                    char b = p.acc.get(data.getInt(j * 2) + i);
+                    if (a != b || a == '\0') return i;
+                }
             }
         }
     }
