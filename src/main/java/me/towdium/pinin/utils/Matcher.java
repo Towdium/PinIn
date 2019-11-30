@@ -21,10 +21,6 @@ public class Matcher {
         return MIN <= i && i < MAX;
     }
 
-    public static int strCmp(String a, String b, int aStart) {
-        return strCmp(a, b, aStart, 0, Integer.MAX_VALUE);
-    }
-
     public static int strCmp(String a, String b, int aStart, int bStart, int max) {
         int len = Math.min(a.length() - aStart, b.length() - bStart);
         len = Math.min(len, max);

@@ -40,7 +40,7 @@ public class Phoneme implements Element {
         IndexSet ret = new IndexSet();
         if (strs.length == 1 && strs[0].isEmpty()) return ret;
         for (String str : strs) {
-            int size = strCmp(source, str, start);
+            int size = strCmp(source, str, start, 0, Integer.MAX_VALUE);
             if (partial && start + size == source.length()) ret.set(size);  // ending match
             else if (size == str.length()) ret.set(size); // full match
         }

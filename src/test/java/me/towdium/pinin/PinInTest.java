@@ -16,6 +16,7 @@ import java.util.function.Supplier;
 
 import static me.towdium.pinin.Keyboard.*;
 import static me.towdium.pinin.Searcher.Logic.CONTAIN;
+import static me.towdium.pinin.Searcher.Logic.MATCH;
 
 public class PinInTest {
     @Test
@@ -245,6 +246,39 @@ public class PinInTest {
         assert s.size() == 1;
         s = tree.search("ce4shi4w2ben");
         assert s.isEmpty();
+    }
+
+    @Test
+    public void full() {
+        List<Searcher<Integer>> ss = new ArrayList<>();
+        ss.add(new TreeSearcher<>(MATCH, new PinIn()));
+        ss.add(new SimpleSearcher<>(MATCH, new PinIn()));
+        for (Searcher<Integer> s : ss) {
+            s.put("测试文本", 1);
+            s.put("测试切分", 5);
+            s.put("测试切分文本", 6);
+            s.put("合金炉", 2);
+            s.put("洗矿场", 3);
+            s.put("流体", 4);
+            s.put("轰20", 7);
+            s.put("hong2", 8);
+            s.put("月球", 9);
+            s.put("汉化", 10);
+            s.put("喊话", 11);
+            List<Integer> is;
+            is = s.search("hong2");
+            assert is.size() == 1 && is.contains(8);
+            is = s.search("hong20");
+            assert is.size() == 1 && is.contains(7);
+            is = s.search("ceshqf");
+            assert is.size() == 1 && is.contains(5);
+            is = s.search("ceshqfw");
+            assert is.isEmpty();
+            is = s.search("hh");
+            assert is.size() == 2 && is.contains(10) && is.contains(11);
+            is = s.search("hhu");
+            assert is.isEmpty();
+        }
     }
 
     public static void main(String[] args) throws IOException {
