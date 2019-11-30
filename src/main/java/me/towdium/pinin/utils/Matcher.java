@@ -33,28 +33,35 @@ public class Matcher {
         return len;
     }
 
-    public static boolean check(String s1, CharSequence s2, PinIn p, boolean full) {
+    public static boolean begins(String s1, CharSequence s2, PinIn p) {
         String ss2 = s2.toString();
-        if (!Matcher.isChinese(s1)) return full ? s1.contains(s2) : s1.startsWith(ss2);
-        if (s2 instanceof String) {
-            if (ss2.isEmpty()) return true;
-            else {
-                for (int i = 0; i < (full ? s1.length() : 1); i++)
-                    if (check(ss2, 0, s1, i, p)) return true;
-                return false;
-            }
+        if (isChinese(s1)) return check(s1, 0, ss2, 0, p, true);
+        else return s1.startsWith(ss2);
+    }
+
+    public static boolean contains(String s1, CharSequence s2, PinIn p) {
+        String ss2 = s2.toString();
+        if (isChinese(s1)) {
+            for (int i = 0; i < s1.length(); i++)
+                if (check(s1, i, ss2, 0, p, true)) return true;
+            return false;
         } else return s1.contains(s2);
     }
 
-    public static boolean check(String s1, int start1, String s2, int start2, PinIn p) {
-        if (start1 == s1.length()) return true;
+    public static boolean matches(String s1, String s2, PinIn p) {
+        if (isChinese(s1)) return check(s1, 0, s2, 0, p, false);
+        else return s1.equals(s2);
+    }
 
-        Element r = p.genChar(s2.charAt(start2));
-        IndexSet s = r.match(s1, start1);
+    private static boolean check(String s1, int start1, String s2, int start2, PinIn p, boolean partial) {
+        if (start2 == s2.length()) return partial;
 
-        if (start2 == s2.length() - 1) {
-            int i = s1.length() - start1;
+        Element r = p.genChar(s1.charAt(start1));
+        IndexSet s = r.match(s2, start2, partial);
+
+        if (start1 == s1.length() - 1) {
+            int i = s2.length() - start2;
             return s.get(i);
-        } else return !s.traverse(i -> !check(s1, start1 + i, s2, start2 + 1, p));
+        } else return !s.traverse(i -> !check(s1, start1 + 1, s2, start2 + i, p, partial));
     }
 }

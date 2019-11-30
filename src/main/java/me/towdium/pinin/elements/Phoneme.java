@@ -20,11 +20,11 @@ public class Phoneme implements Element {
         reload(str, p);
     }
 
-    public IndexSet match(String source, IndexSet idx, int start) {
+    public IndexSet match(String source, IndexSet idx, int start, boolean partial) {
         if (strs.length == 1 && strs[0].isEmpty()) return new IndexSet(idx);
         IndexSet ret = new IndexSet();
         idx.foreach(i -> {
-            IndexSet is = match(source, start + i);
+            IndexSet is = match(source, start + i, partial);
             is.offset(i);
             ret.merge(is);
         });
@@ -36,12 +36,12 @@ public class Phoneme implements Element {
     }
 
     @Override
-    public IndexSet match(String source, int start) {
+    public IndexSet match(String source, int start, boolean partial) {
         IndexSet ret = new IndexSet();
         if (strs.length == 1 && strs[0].isEmpty()) return ret;
         for (String str : strs) {
             int size = strCmp(source, str, start);
-            if (start + size == source.length()) ret.set(size);  // ending match
+            if (partial && start + size == source.length()) ret.set(size);  // ending match
             else if (size == str.length()) ret.set(size); // full match
         }
         return ret;

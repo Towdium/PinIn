@@ -2,6 +2,7 @@ package me.towdium.pinin;
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import me.towdium.pinin.Searcher.Logic;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import static me.towdium.pinin.Keyboard.*;
+import static me.towdium.pinin.Searcher.Logic.CONTAIN;
 
 public class PinInTest {
     @Test
@@ -23,8 +25,8 @@ public class PinInTest {
         search.add("boli");
         search.add("yangmao");
         search.add("hongse");
-        boolean suffix = true;
-        Supplier<Searcher<Integer>> supplier = () -> new TreeSearcher<>(suffix, new PinIn());
+        Logic logic = CONTAIN;
+        Supplier<Searcher<Integer>> supplier = () -> new TreeSearcher<>(logic, new PinIn());
         String source = "small";
         System.out.println("Test performance");
         List<String> strs = new ArrayList<>();
@@ -102,8 +104,7 @@ public class PinInTest {
             for (int j = 0; j < loop; j++) {
                 for (int i = 0; i < strs.size(); i++) {
                     String k = strs.get(i);
-                    //noinspection ConstantConditions
-                    if (suffix ? p.contains(k, s) : p.begins(k, s)) result.add(i);
+                    if (logic.test(p, k, s)) result.add(i);
                 }
             }
             t = (System.currentTimeMillis() - time) / (float) loop;
@@ -117,8 +118,7 @@ public class PinInTest {
             for (int j = 0; j < loop; j++) {
                 for (int i = 0; i < strs.size(); i++) {
                     String k = strs.get(i);
-                    //noinspection ConstantConditions
-                    if (suffix ? k.contains(s) : k.startsWith(s)) result.add(i);
+                    if (logic.raw(k, s)) result.add(i);
                 }
             }
             t = (System.currentTimeMillis() - time) / (float) loop;
@@ -187,7 +187,7 @@ public class PinInTest {
     @Test
     public void tree() {
         System.out.println("Test tree");
-        TreeSearcher<Integer> tree = new TreeSearcher<>(true, new PinIn());
+        TreeSearcher<Integer> tree = new TreeSearcher<>(CONTAIN, new PinIn());
         tree.put("测试文本", 1);
         tree.put("测试切分", 5);
         tree.put("测试切分文本", 6);
@@ -227,7 +227,7 @@ public class PinInTest {
     @Test
     public void context() {
         PinIn p = new PinIn();
-        TreeSearcher<Integer> tree = new TreeSearcher<>(true, p);
+        TreeSearcher<Integer> tree = new TreeSearcher<>(CONTAIN, p);
         tree.put("测试文本", 0);
         tree.put("测试文字", 3);
         Collection<Integer> s;

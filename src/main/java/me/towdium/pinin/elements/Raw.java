@@ -11,7 +11,7 @@ public class Raw extends Char {
     }
 
     @Override
-    public IndexSet match(String str, int start) {
+    public IndexSet match(String str, int start, boolean partial) {
         return str.charAt(start) == ch ? IndexSet.ONE : IndexSet.NONE;
     }
 }

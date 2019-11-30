@@ -52,11 +52,15 @@ public class PinIn {
     }
 
     public boolean contains(String s1, CharSequence s2) {
-        return Matcher.check(s1, s2, this, true);
+        return Matcher.contains(s1, s2, this);
     }
 
     public boolean begins(String s1, CharSequence s2) {
-        return Matcher.check(s1, s2, this, false);
+        return Matcher.begins(s1, s2, this);
+    }
+
+    public boolean matches(String k, String s) {
+        return Matcher.matches(k, s, this);
     }
 
     public Phoneme genPhoneme(String s) {

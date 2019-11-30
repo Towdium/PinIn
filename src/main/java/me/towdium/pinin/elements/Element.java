@@ -7,5 +7,5 @@ import me.towdium.pinin.utils.IndexSet;
  * Date: 21/04/19
  */
 public interface Element {
-    IndexSet match(String str, int start);
+    IndexSet match(String str, int start, boolean partial);
 }

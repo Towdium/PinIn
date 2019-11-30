@@ -5,6 +5,7 @@ import it.unimi.dsi.fastutil.chars.CharList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import me.towdium.pinin.PinIn;
+import me.towdium.pinin.Searcher;
 import me.towdium.pinin.elements.Char;
 import me.towdium.pinin.elements.Element;
 import me.towdium.pinin.elements.Pinyin;
@@ -18,6 +19,7 @@ public class Accelerator {
     String search;
     CharList chars = new CharArrayList();
     IntList strs = new IntArrayList();
+    final boolean partial;
 
     public char get(int offset) {
         return chars.getChar(offset);
@@ -27,8 +29,9 @@ public class Accelerator {
         return chars.getChar(offset) == '\0';
     }
 
-    public Accelerator(PinIn context) {
+    public Accelerator(PinIn context, Searcher.Logic logic) {
         this.context = context;
+        partial = logic != Searcher.Logic.MATCH;
     }
 
     public void search(String s) {
@@ -41,7 +44,7 @@ public class Accelerator {
         for (Element p : c.patterns()) {
             IndexSet is;
             if (p instanceof Pinyin) is = get((Pinyin) p, offset);
-            else is = p.match(search, offset);
+            else is = p.match(search, offset, partial);
             ret.merge(is);
         }
         return ret;
@@ -53,27 +56,37 @@ public class Accelerator {
         IndexSet[] data = cache.get(offset);
         IndexSet ret = data[p.id];
         if (ret == null) {
-            ret = p.match(search, offset);
+            ret = p.match(search, offset, partial);
             data[p.id] = ret;
         }
         return ret;
     }
 
-    public boolean check(int offset, int start2) {
-        if (offset == search.length()) return true;
+    // offset - offset in search string
+    // start - start point in raw text
+    public boolean check(int offset, int start, boolean partial) {
+        if (offset == search.length()) return partial;
 
-        Char r = context.genChar(get(start2));
+        Char r = context.genChar(get(start));
         IndexSet s = get(r, offset);
 
-        if (end(start2 + 1)) {
+        if (end(start + 1)) {
             int i = search.length() - offset;
             return s.get(i);
-        } else return !s.traverse(i -> !check(offset + i, start2 + 1));
+        } else return !s.traverse(i -> !check(offset + i, start + 1, partial));
     }
 
-    public boolean contains(int offset, boolean full) {
-        for (int i = offset; full ? !end(i) : i == offset; i++) {
-            if (check(0, i)) return true;
+    public boolean matches(int offset, int start) {
+        return check(offset, start, partial);
+    }
+
+    public boolean begins(int offset, int start) {
+        return check(offset, start, partial);
+    }
+
+    public boolean contains(int offset, int start) {
+        for (int i = start; !end(i); i++) {
+            if (check(offset, i, partial)) return true;
         }
         return false;
     }
@@ -92,7 +105,7 @@ public class Accelerator {
         return strs.getInt(strs.size() - 1);
     }
 
-    public int match(int s1, int s2, int max) {
+    public int common(int s1, int s2, int max) {
         for (int i = 0; ; i++) {
             if (i >= max) return max;
             char a = get(s1 + i);

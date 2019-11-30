@@ -10,12 +10,12 @@ public class SimpleSearcher<T> implements Searcher<T> {
     List<T> objs = new ArrayList<>();
     final Accelerator acc;
     final PinIn context;
-    final boolean suffix;
+    final Logic logic;
 
-    public SimpleSearcher(boolean suffix, PinIn context) {
+    public SimpleSearcher(Logic logic, PinIn context) {
         this.context = context;
-        this.suffix = suffix;
-        acc = new Accelerator(context);
+        this.logic = logic;
+        acc = new Accelerator(context, logic);
     }
 
     @Override
@@ -31,7 +31,7 @@ public class SimpleSearcher<T> implements Searcher<T> {
         IntList strs = acc.strs();
         for (int i = 0; i < strs.size(); i++) {
             int s = strs.getInt(i);
-            if (acc.contains(s, suffix)) ret.add(objs.get(i));
+            if (logic.test(acc, 0, s)) ret.add(objs.get(i));
         }
         return ret;
     }

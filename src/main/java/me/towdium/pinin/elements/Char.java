@@ -29,10 +29,10 @@ public class Char implements Element {
     }
 
     @Override
-    public IndexSet match(String str, int start) {
+    public IndexSet match(String str, int start, boolean partial) {
         IndexSet ret = new IndexSet();
         for (Element p : patterns)
-            ret.merge(p.match(str, start));
+            ret.merge(p.match(str, start, partial));
         return ret;
     }
 

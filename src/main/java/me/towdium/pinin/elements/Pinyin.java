@@ -62,12 +62,12 @@ public class Pinyin implements Element {
         return ret;
     }
 
-    public IndexSet match(String str, int start) {
+    public IndexSet match(String str, int start, boolean partial) {
         IndexSet ret = new IndexSet(0x1);
-        ret = phonemes[0].match(str, ret, start);
-        if (duo) ret = phonemes[1].match(str, ret, start);
-        else ret.merge(phonemes[1].match(str, ret, start));
-        if (phonemes.length == 3) ret.merge(phonemes[2].match(str, ret, start));
+        ret = phonemes[0].match(str, ret, start, partial);
+        if (duo) ret = phonemes[1].match(str, ret, start, partial);
+        else ret.merge(phonemes[1].match(str, ret, start, partial));
+        if (phonemes.length == 3) ret.merge(phonemes[2].match(str, ret, start, partial));
         return ret;
     }
 
