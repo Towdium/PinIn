@@ -7,7 +7,6 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import me.towdium.pinin.PinIn;
 import me.towdium.pinin.Searcher;
 import me.towdium.pinin.elements.Char;
-import me.towdium.pinin.elements.Element;
 import me.towdium.pinin.elements.Pinyin;
 
 import java.util.ArrayList;
@@ -40,13 +39,8 @@ public class Accelerator {
     }
 
     public IndexSet get(Char c, int offset) {
-        IndexSet ret = new IndexSet();
-        for (Element p : c.patterns()) {
-            IndexSet is;
-            if (p instanceof Pinyin) is = get((Pinyin) p, offset);
-            else is = p.match(search, offset, partial);
-            ret.merge(is);
-        }
+        IndexSet ret = (get(offset) == c.ch ? IndexSet.ONE : IndexSet.NONE).copy();
+        for (Pinyin p : c.pinyins()) ret.merge(get(p, offset));
         return ret;
     }
 

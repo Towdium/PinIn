@@ -74,4 +74,8 @@ public class IndexSet {
     public boolean isEmpty() {
         return value == 0x0;
     }
+
+    public IndexSet copy() {
+        return new IndexSet(value);
+    }
 }

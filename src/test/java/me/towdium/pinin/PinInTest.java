@@ -3,6 +3,8 @@ package me.towdium.pinin;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import me.towdium.pinin.Searcher.Logic;
+import me.towdium.pinin.elements.Char;
+import me.towdium.pinin.elements.Pinyin;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
@@ -279,6 +281,16 @@ public class PinInTest {
             is = s.search("hhu");
             assert is.isEmpty();
         }
+    }
+
+    @Test
+    public void format() {
+        PinIn p = new PinIn();
+        Char c = p.genChar('圆');
+        Pinyin py = c.pinyins()[0];
+        assert py.format(Pinyin.Format.NUMBER).equals("yuan2");
+        assert py.format(Pinyin.Format.RAW).equals("yuan");
+        assert py.format(Pinyin.Format.UNICODE).equals("yuán");
     }
 
     public static void main(String[] args) throws IOException {

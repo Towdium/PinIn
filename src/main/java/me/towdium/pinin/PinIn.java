@@ -1,9 +1,9 @@
 package me.towdium.pinin;
 
 import me.towdium.pinin.elements.Char;
+import me.towdium.pinin.elements.Chinese;
 import me.towdium.pinin.elements.Phoneme;
 import me.towdium.pinin.elements.Pinyin;
-import me.towdium.pinin.elements.Raw;
 import me.towdium.pinin.utils.Cache;
 import me.towdium.pinin.utils.Matcher;
 
@@ -18,7 +18,7 @@ public class PinIn {
 
     private Cache<String, Phoneme> cPhoneme = new Cache<>(s -> new Phoneme(s, this));
     private Cache<String, Pinyin> cPinyin = new Cache<>(s -> new Pinyin(s, this, total++));
-    private Char[] cChar = new Char[MAX - MIN];
+    private Chinese[] cChar = new Chinese[MAX - MIN];
     private WeakHashMap<Object, Runnable> listeners = new WeakHashMap<>();
 
     private Keyboard keyboard;
@@ -73,13 +73,13 @@ public class PinIn {
 
     public Char genChar(char c) {
         if (Matcher.isChinese(c)) {
-            Char ret = cChar[c - MIN];
+            Chinese ret = cChar[c - MIN];
             if (ret == null) {
-                ret = new Char(c, this);
+                ret = new Chinese(c, this);
                 cChar[c - MIN] = ret;
             }
             return ret;
-        } else return new Raw(c);
+        } else return new Char(c);
     }
 
     public static void initialize() {
