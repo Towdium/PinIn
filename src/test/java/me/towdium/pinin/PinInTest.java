@@ -291,6 +291,8 @@ public class PinInTest {
         assert py.format(Pinyin.Format.NUMBER).equals("yuan2");
         assert py.format(Pinyin.Format.RAW).equals("yuan");
         assert py.format(Pinyin.Format.UNICODE).equals("yuán");
+        assert py.format(Pinyin.Format.PHONETIC).equals("ㄩㄢˊ");
+        assert p.genPinyin("le0").format(Pinyin.Format.PHONETIC).equals("˙ㄌㄜ");
     }
 
     public static void main(String[] args) throws IOException {
