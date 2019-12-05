@@ -30,7 +30,7 @@ public class PinInTest {
         search.add("hongse");
         Logic logic = CONTAIN;
         Supplier<Searcher<Integer>> supplier = () -> new TreeSearcher<>(logic, new PinIn());
-        String source = "small";
+        String source = "large";
         System.out.println("Test performance");
         List<String> strs = new ArrayList<>();
         Searcher<Integer> searcher = null;

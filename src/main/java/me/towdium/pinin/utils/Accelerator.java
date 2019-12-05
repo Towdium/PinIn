@@ -39,7 +39,7 @@ public class Accelerator {
     }
 
     public IndexSet get(Char c, int offset) {
-        IndexSet ret = (get(offset) == c.ch ? IndexSet.ONE : IndexSet.NONE).copy();
+        IndexSet ret = (search.charAt(offset) == c.ch ? IndexSet.ONE : IndexSet.NONE).copy();
         for (Pinyin p : c.pinyins()) ret.merge(get(p, offset));
         return ret;
     }
