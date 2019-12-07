@@ -15,7 +15,7 @@ public class SimpleSearcher<T> implements Searcher<T> {
     public SimpleSearcher(Logic logic, PinIn context) {
         this.context = context;
         this.logic = logic;
-        acc = new Accelerator(context, logic);
+        acc = new Accelerator(context);
     }
 
     @Override
@@ -27,7 +27,7 @@ public class SimpleSearcher<T> implements Searcher<T> {
     @Override
     public List<T> search(String name) {
         List<T> ret = new ArrayList<>();
-        acc.search(name);
+        acc.search(name, logic);
         IntList strs = acc.strs();
         for (int i = 0; i < strs.size(); i++) {
             int s = strs.getInt(i);

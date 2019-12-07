@@ -8,12 +8,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static me.towdium.pinin.Searcher.Logic.CONTAIN;
-import static me.towdium.pinin.Searcher.Logic.MATCH;
+import static me.towdium.pinin.Searcher.Logic.*;
 
 public class CachedSearcher<T> extends SimpleSearcher<T> {
     IntList all = new IntArrayList();
     float scale;
+    int len = -1;
     int total = 0;
     LinkedHashMap<String, IntList> cache = new LinkedHashMap<String, IntList>() {
         @Override
@@ -32,7 +32,6 @@ public class CachedSearcher<T> extends SimpleSearcher<T> {
 
     public CachedSearcher(Logic logic, PinIn context, float scale) {
         super(logic, context);
-        if (logic == MATCH) throw new IllegalArgumentException("Cached searcher do not support match logic");
         this.scale = scale;
         context.listen(this, this::reset);
     }
@@ -41,28 +40,44 @@ public class CachedSearcher<T> extends SimpleSearcher<T> {
         reset();
         total += name.length();
         all.add(all.size());
+        len = -1;
         super.put(name, identifier);
     }
 
     public List<T> search(String name) {
-        return generate(name).stream().map(i -> objs.get(i)).collect(Collectors.toList());
+        if (len == -1) len = (int) Math.ceil(Math.log(max()) / Math.log(8));
+        return test(name).stream().map(i -> objs.get(i)).collect(Collectors.toList());
     }
 
-    private IntList generate(String name) {
+    private IntList filter(String name) {
         IntList ret;
         if (name.isEmpty()) return all;
         else if ((ret = cache.get(name)) == null) {
-            int len = (int) Math.ceil(Math.log(max()) / Math.log(8));
-            ret = new IntArrayList();
-            IntList is = generate(name.substring(0, Math.min(name.length() - 1, len)));
-            acc.search(name);
-            for (int i : is) if (logic.test(acc, 0, acc.strs().getInt(i))) ret.add(i);
-            if (ret.size() == is.size()) ret = is;
-            if (name.length() > len) return ret;
+            Logic filter = logic == EQUAL ? BEGIN : logic;
+            if (name.length() > len) throw new RuntimeException("Unnecessary filter");
+            IntArrayList tmp = new IntArrayList();
+            IntList is = filter(name.substring(0, name.length() - 1));
+            acc.search(name, filter);
+            for (int i : is) if (filter.test(acc, 0, acc.strs().getInt(i))) tmp.add(i);
+            if (tmp.size() == is.size()) ret = is;
+            else {
+                tmp.trim();
+                ret = tmp;
+            }
         }
         cache.remove(name);
         cache.put(name, ret);
         return ret;
+    }
+
+    private IntList test(String name) {
+        IntList is = filter(name.substring(0, Math.min(name.length(), len)));
+        if (logic == EQUAL || name.length() > len) {
+            IntArrayList ret = new IntArrayList();
+            acc.search(name, logic);
+            for (int i : is) if (logic.test(acc, 0, acc.strs().getInt(i))) ret.add(i);
+            return ret;
+        } else return is;
     }
 
     public void reset() {

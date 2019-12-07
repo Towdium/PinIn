@@ -18,7 +18,7 @@ import java.util.function.Supplier;
 
 import static me.towdium.pinin.Keyboard.*;
 import static me.towdium.pinin.Searcher.Logic.CONTAIN;
-import static me.towdium.pinin.Searcher.Logic.MATCH;
+import static me.towdium.pinin.Searcher.Logic.EQUAL;
 
 public class PinInTest {
     @Test
@@ -30,7 +30,7 @@ public class PinInTest {
         search.add("hongse");
         Logic logic = CONTAIN;
         Supplier<Searcher<Integer>> supplier = () -> new TreeSearcher<>(logic, new PinIn());
-        String source = "large";
+        String source = "small";
         System.out.println("Test performance");
         List<String> strs = new ArrayList<>();
         Searcher<Integer> searcher = null;
@@ -114,6 +114,7 @@ public class PinInTest {
             traverse += t;
             System.out.println("Loop search time: " + t);
             assert is != null && result.containsAll(is) && is.containsAll(result);
+            System.out.println("Total matches: " + is.size());
 
             time = System.currentTimeMillis();
             result = new IntOpenHashSet();
@@ -253,8 +254,8 @@ public class PinInTest {
     @Test
     public void full() {
         List<Searcher<Integer>> ss = new ArrayList<>();
-        ss.add(new TreeSearcher<>(MATCH, new PinIn()));
-        ss.add(new SimpleSearcher<>(MATCH, new PinIn()));
+        ss.add(new TreeSearcher<>(EQUAL, new PinIn()));
+        ss.add(new SimpleSearcher<>(EQUAL, new PinIn()));
         for (Searcher<Integer> s : ss) {
             s.put("测试文本", 1);
             s.put("测试切分", 5);

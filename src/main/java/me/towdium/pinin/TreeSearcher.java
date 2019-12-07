@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
 
-import static me.towdium.pinin.Searcher.Logic.MATCH;
+import static me.towdium.pinin.Searcher.Logic.EQUAL;
 
 /**
  * Author: Towdium
@@ -38,7 +38,7 @@ public class TreeSearcher<T> implements Searcher<T> {
     public TreeSearcher(Logic logic, PinIn context) {
         this.logic = logic;
         this.context = context;
-        acc = new Accelerator(context, logic);
+        acc = new Accelerator(context);
         context.listen(this, this::refresh);
     }
 
@@ -51,7 +51,7 @@ public class TreeSearcher<T> implements Searcher<T> {
     }
 
     public List<T> search(String s) {
-        acc.search(s);
+        acc.search(s, logic);
         IntSet ret = new IntRBTreeSet();
         root.get(this, ret, 0);
         return ret.stream().map(i -> objects.get(i))
@@ -117,7 +117,7 @@ public class TreeSearcher<T> implements Searcher<T> {
             if (this.start + start == end)
                 exit.get(p, ret, offset);
             else if (offset == p.acc.search().length()) {
-                if (p.logic != MATCH) exit.get(p, ret);
+                if (p.logic != EQUAL) exit.get(p, ret);
             } else {
                 char ch = p.acc.get(this.start + start);
                 p.acc.get(p.context.genChar(ch), offset).foreach(i ->
@@ -132,7 +132,7 @@ public class TreeSearcher<T> implements Searcher<T> {
 
         @Override
         public void get(TreeSearcher<T> p, IntSet ret, int offset) {
-            boolean full = p.logic == MATCH;
+            boolean full = p.logic == EQUAL;
             if (!full && p.acc.search().length() == offset) get(p, ret);
             else {
                 for (int i = 0; i < data.size() / 2; i++) {
@@ -183,7 +183,7 @@ public class TreeSearcher<T> implements Searcher<T> {
         @Override
         public void get(TreeSearcher<T> p, IntSet ret, int offset) {
             if (p.acc.search().length() == offset) {
-                if (p.logic == MATCH) ret.addAll(leaves);
+                if (p.logic == EQUAL) ret.addAll(leaves);
                 else get(p, ret);
             } else if (children != null) {
                 children.forEach((c, n) -> p.acc.get(p.context.genChar(c), offset)
@@ -240,7 +240,7 @@ public class TreeSearcher<T> implements Searcher<T> {
         @Override
         public void get(TreeSearcher<T> p, IntSet ret, int offset) {
             if (p.acc.search().length() == offset) {
-                if (p.logic == MATCH) ret.addAll(leaves);
+                if (p.logic == EQUAL) ret.addAll(leaves);
                 else get(p, ret);
             } else {
                 Node<T> n = children.get(p.acc.search().charAt(offset));

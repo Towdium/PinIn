@@ -18,7 +18,7 @@ public class Accelerator {
     String search;
     CharList chars = new CharArrayList();
     IntList strs = new IntArrayList();
-    final boolean partial;
+    boolean partial;
 
     public char get(int offset) {
         return chars.getChar(offset);
@@ -28,13 +28,13 @@ public class Accelerator {
         return chars.getChar(offset) == '\0';
     }
 
-    public Accelerator(PinIn context, Searcher.Logic logic) {
+    public Accelerator(PinIn context) {
         this.context = context;
-        partial = logic != Searcher.Logic.MATCH;
     }
 
-    public void search(String s) {
+    public void search(String s, Searcher.Logic l) {
         search = s;
+        this.partial = l != Searcher.Logic.EQUAL;
         cache = new ArrayList<>();
     }
 
@@ -58,8 +58,8 @@ public class Accelerator {
 
     // offset - offset in search string
     // start - start point in raw text
-    public boolean check(int offset, int start, boolean partial) {
-        if (offset == search.length()) return partial;
+    public boolean check(int offset, int start) {
+        if (offset == search.length()) return partial || end(start);
 
         Char r = context.genChar(get(start));
         IndexSet s = get(r, offset);
@@ -67,20 +67,23 @@ public class Accelerator {
         if (end(start + 1)) {
             int i = search.length() - offset;
             return s.get(i);
-        } else return !s.traverse(i -> !check(offset + i, start + 1, partial));
+        } else return !s.traverse(i -> !check(offset + i, start + 1));
     }
 
     public boolean matches(int offset, int start) {
-        return check(offset, start, partial);
+        if (partial) throw new IllegalStateException("Internal error");
+        return check(offset, start);
     }
 
     public boolean begins(int offset, int start) {
-        return check(offset, start, partial);
+        if (!partial) throw new IllegalStateException("Internal error");
+        return check(offset, start);
     }
 
     public boolean contains(int offset, int start) {
+        if (!partial) throw new IllegalStateException("Internal error");
         for (int i = start; !end(i); i++) {
-            if (check(offset, i, partial)) return true;
+            if (check(offset, i)) return true;
         }
         return false;
     }

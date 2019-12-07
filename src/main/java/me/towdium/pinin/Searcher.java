@@ -11,8 +11,8 @@ public interface Searcher<T> {
 
     PinIn context();
 
-    abstract class Logic {
-        public static final Logic BEGIN = new Logic() {
+    enum Logic {
+        BEGIN {
             @Override
             public boolean test(Accelerator a, int offset, int start) {
                 return a.begins(offset, start);
@@ -27,9 +27,9 @@ public interface Searcher<T> {
             public boolean raw(String s1, String s2) {
                 return s1.startsWith(s2);
             }
-        };
+        },
 
-        public static final Logic CONTAIN = new Logic() {
+        CONTAIN {
             @Override
             public boolean test(Accelerator a, int offset, int start) {
                 return a.contains(offset, start);
@@ -44,9 +44,9 @@ public interface Searcher<T> {
             public boolean raw(String s1, String s2) {
                 return s1.contains(s2);
             }
-        };
+        },
 
-        public static final Logic MATCH = new Logic() {
+        EQUAL {
             @Override
             public boolean test(Accelerator a, int offset, int start) {
                 return a.matches(offset, start);
@@ -63,10 +63,16 @@ public interface Searcher<T> {
             }
         };
 
-        public abstract boolean test(Accelerator a, int offset, int start);
+        public boolean test(Accelerator a, int offset, int start) {
+            return false;
+        }
 
-        public abstract boolean test(PinIn p, String s1, String s2);
+        public boolean test(PinIn p, String s1, String s2) {
+            return false;
+        }
 
-        public abstract boolean raw(String s1, String s2);
+        public boolean raw(String s1, String s2) {
+            return false;
+        }
     }
 }

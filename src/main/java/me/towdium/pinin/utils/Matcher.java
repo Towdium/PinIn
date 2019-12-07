@@ -50,7 +50,7 @@ public class Matcher {
     }
 
     private static boolean check(String s1, int start1, String s2, int start2, PinIn p, boolean partial) {
-        if (start2 == s2.length()) return partial;
+        if (start2 == s2.length()) return partial || start1 == s1.length();
 
         Element r = p.genChar(s1.charAt(start1));
         IndexSet s = r.match(s2, start2, partial);
