@@ -278,13 +278,13 @@ public class PinInTest {
 
     @Test
     public void format() {
-        PinIn p = new PinIn();
-        Char c = p.genChar('圆');
-        Pinyin py = c.pinyins()[0];
+        PinIn pi = new PinIn();
+        Char ch = pi.genChar('圆');
+        Pinyin py = ch.pinyins()[0];
         assert py.format(Pinyin.Format.NUMBER).equals("yuan2");
         assert py.format(Pinyin.Format.RAW).equals("yuan");
         assert py.format(Pinyin.Format.UNICODE).equals("yuán");
         assert py.format(Pinyin.Format.PHONETIC).equals("ㄩㄢˊ");
-        assert p.genPinyin("le0").format(Pinyin.Format.PHONETIC).equals("˙ㄌㄜ");
+        assert pi.genPinyin("le0").format(Pinyin.Format.PHONETIC).equals("˙ㄌㄜ");
     }
 }
