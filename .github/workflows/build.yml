@@ -16,13 +16,8 @@ jobs:
       run: chmod +x gradlew
     - name: Build with Gradle
       run: ./gradlew build
-    - name: Upload raw jar
+    - name: Upload artifacts
       uses: actions/upload-artifact@v1
       with:
-        name: clean
-        path: build/libs/PinIn.jar
-    - name: Upload shadow jar
-      uses: actions/upload-artifact@v1
-      with:
-        name: shadow
-        path: build/libs/PinIn-all.jar
+        name: Jars
+        path: build/libs/
