@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 import static me.towdium.pinin.Keyboard.*;
 import static me.towdium.pinin.Searcher.Logic.CONTAIN;
@@ -28,12 +28,24 @@ public class PinInTest {
         search.add("boli");
         search.add("yangmao");
         search.add("hongse");
-        Logic logic = CONTAIN;
-        Supplier<Searcher<Integer>> supplier = () -> new TreeSearcher<>(logic, new PinIn());
-        String source = "small";
-        System.out.println("Test performance");
+        List<Function<Logic, Searcher<Integer>>> funcs = new ArrayList<>();
+        funcs.add(l -> new TreeSearcher<>(l, new PinIn()));
+        funcs.add(l -> new CachedSearcher<>(l, new PinIn()));
+        funcs.add(l -> new SimpleSearcher<>(l, new PinIn()));
+        String[] sources = new String[]{"small", "large"};
+        for (Function<Logic, Searcher<Integer>> i : funcs)
+            for (Logic j : Logic.values())
+                for (String k : sources) performance(j, k, search, i);
+    }
+
+    private void performance(Logic logic, String source, List<String> search,
+                             Function<Logic, Searcher<Integer>> func) throws IOException {
+        long start = System.currentTimeMillis();
+        Searcher<Integer> searcher = func.apply(logic);
+        System.out.print("Test performance, logic: " + logic.toString().toLowerCase() + ", source: " + source);
+        System.out.println(", searcher: " + searcher.getClass().getSimpleName());
         List<String> strs = new ArrayList<>();
-        Searcher<Integer> searcher = null;
+
         BufferedReader br = new BufferedReader(new InputStreamReader(
                 PinInTest.class.getResourceAsStream(source + ".txt"), StandardCharsets.UTF_8));
         String line;
@@ -41,19 +53,15 @@ public class PinInTest {
             if (line.isEmpty()) continue;
             strs.add(line);
         }
-        String full = String.join("", strs);
 
-        int loop = 10;
+        int loop = source.equals("large") ? 2 : 10;
         long time = System.currentTimeMillis();
         for (int i = 0; i < loop; i++) {
-            searcher = supplier.get();
-            for (int j = 0; j < strs.size(); j++) {
-                searcher.put(strs.get(j), j);
-            }
-            //searcher.put(full, 0);
+            searcher = func.apply(logic);
+            for (int j = 0; j < strs.size(); j++) searcher.put(strs.get(j), j);
         }
 
-        System.out.println("Construction time: " + (System.currentTimeMillis() - time) / (float) loop);
+        float construct = (System.currentTimeMillis() - time) / (float) loop;
 
         float warm = 0;
         float acc = 0;
@@ -63,47 +71,33 @@ public class PinInTest {
         for (String s : search) {
             List<Integer> is = null;
             float t;
-            //noinspection ConstantConditions
             if (searcher instanceof CachedSearcher) {
                 time = System.currentTimeMillis();
-                loop = 100;
+                loop = source.equals("large") ? 10 : 100;
                 for (int i = 0; i < loop; i++) {
                     ((CachedSearcher) searcher).reset();
                     is = searcher.search(s);
                 }
                 t = (System.currentTimeMillis() - time) / (float) loop;
                 warm += t;
-                System.out.println("Warm up time: " + t);
-                searcher.search("jiqi");
-                searcher.search("yangmao");
-                searcher.search("yunshanmuban");
-                searcher.search("hongshi");
-                searcher.search("xianlan");
-                searcher.search("kuangjia");
-                searcher.search("lvse");
-                searcher.search("niantu");
-                searcher.search("yangmao");
-                searcher.search("hunningtu");
-                System.out.println("Test search completed.");
+                //System.out.println("Warm up time: " + t);
             }
 
             time = System.currentTimeMillis();
             loop = 10000;
-            //noinspection ConstantConditions
             if (searcher instanceof SimpleSearcher) loop /= 100;
-            for (int i = 0; i < loop; i++) {
-                is = searcher.search(s);
-            }
+            if (source.equals("large")) loop /= 10;
+            for (int i = 0; i < loop; i++) is = searcher.search(s);
             t = (System.currentTimeMillis() - time) / (float) loop;
             acc += t;
-            System.out.println("Accelerated search time: " + t);
+            //System.out.println("Accelerated search time: " + t);
 
             //for (Integer i: is) System.out.println(strs.get(i));
 
             time = System.currentTimeMillis();
             PinIn p = new PinIn();
             IntSet result = new IntOpenHashSet();
-            loop = 3;
+            loop = 2;
             for (int j = 0; j < loop; j++) {
                 for (int i = 0; i < strs.size(); i++) {
                     String k = strs.get(i);
@@ -112,9 +106,9 @@ public class PinInTest {
             }
             t = (System.currentTimeMillis() - time) / (float) loop;
             traverse += t;
-            System.out.println("Loop search time: " + t);
+            //System.out.println("Loop search time: " + t);
             assert is != null && result.containsAll(is) && is.containsAll(result);
-            System.out.println("Total matches: " + is.size());
+            //System.out.println("Total matches: " + is.size());
 
             time = System.currentTimeMillis();
             result = new IntOpenHashSet();
@@ -127,20 +121,22 @@ public class PinInTest {
             }
             t = (System.currentTimeMillis() - time) / (float) loop;
             contains += t;
-            System.out.println("Contains search time: " + t);
+            //System.out.println("Contains search time: " + t);
         }
         if (search.size() == 1) return;
-        //noinspection ConstantConditions
+        System.out.print("Averaged ");
+
+        System.out.print("contains search: " + String.format("%.2f", contains / search.size()));
+        System.out.print(", loop search: " + String.format("%.1f", traverse / search.size()));
+        System.out.print(", construction: " + String.format("%.1f", construct));
         if (searcher instanceof CachedSearcher)
-            System.out.println("Average warm up time: " + warm / search.size());
-        System.out.println("Average accelerated search time: " + acc / search.size());
-        System.out.println("Average loop search time: " + traverse / search.size());
-        System.out.println("Average contains search time: " + contains / search.size());
+            System.out.print(", warm up : " + String.format("%.1f", warm / search.size()));
+        System.out.print(", accelerated: " + String.format("%.3f", acc / search.size()));
+        System.out.println(", total: " + (System.currentTimeMillis() - start));
     }
 
     @Test
     public void quanpin() {
-        System.out.println("Test quanpin");
         PinIn p = new PinIn();
         assert p.contains("测试文本", "ceshiwenben");
         assert p.contains("测试文本", "ceshiwenbe");
@@ -156,7 +152,6 @@ public class PinInTest {
 
     @Test
     public void daqian() {
-        System.out.println("Test daqian");
         PinIn p = new PinIn().config().keyboard(DAQIAN).commit();
         assert p.contains("测试文本", "hk4g4jp61p3");
         assert p.contains("测试文本", "hkgjp1");
@@ -166,7 +161,6 @@ public class PinInTest {
 
     @Test
     public void xiaohe() {
-        System.out.println("Test xiaohe");
         PinIn p = new PinIn().config().keyboard(XIAOHE).commit();
         assert p.contains("测试文本", "ceuiwfbf");
         assert p.contains("测试文本", "ceuiwf2");
@@ -178,7 +172,6 @@ public class PinInTest {
 
     @Test
     public void ziranma() {
-        System.out.println("Test ziranma");
         PinIn p = new PinIn().config().keyboard(ZIRANMA).commit();
         assert p.contains("测试文本", "ceuiwfbf");
         assert p.contains("测试文本", "ceuiwf2");
@@ -190,7 +183,6 @@ public class PinInTest {
 
     @Test
     public void tree() {
-        System.out.println("Test tree");
         TreeSearcher<Integer> tree = new TreeSearcher<>(CONTAIN, new PinIn());
         tree.put("测试文本", 1);
         tree.put("测试切分", 5);
@@ -294,9 +286,5 @@ public class PinInTest {
         assert py.format(Pinyin.Format.UNICODE).equals("yuán");
         assert py.format(Pinyin.Format.PHONETIC).equals("ㄩㄢˊ");
         assert p.genPinyin("le0").format(Pinyin.Format.PHONETIC).equals("˙ㄌㄜ");
-    }
-
-    public static void main(String[] args) throws IOException {
-        new PinInTest().performance();
     }
 }

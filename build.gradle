@@ -1,7 +1,26 @@
-apply plugin: "java"
+plugins {
+    id 'com.github.johnrengelman.shadow' version '4.0.4'
+    id 'java'
+}
 
 repositories {
     mavenCentral()
+}
+
+shadowJar {
+    exclude 'it/unimi/dsi/fastutil/shorts/**'
+    exclude 'it/unimi/dsi/fastutil/longs/**'
+    exclude 'it/unimi/dsi/fastutil/floats/**'
+    exclude 'it/unimi/dsi/fastutil/doubles/**'
+    exclude 'it/unimi/dsi/fastutil/bytes/**'
+    exclude 'it/unimi/dsi/fastutil/booleans/**'
+    relocate 'it.unimi.dsi.fastutil', 'me.towdium.pinin.fastutil'
+}
+
+test {
+    useJUnitPlatform()
+    dependsOn cleanTest
+    testLogging.showStandardStreams = true
 }
 
 tasks.withType(JavaCompile) {
