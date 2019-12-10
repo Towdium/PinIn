@@ -40,8 +40,10 @@ __前缀匹配__
 | CachedSearcher | 28ms | 2.8ms | 0.10ms | 见备注 |
 | 遍历拼音匹配 | N/A | N/A | 8.8ms | N/A |
 | 遍历 startsWith | N/A | N/A | 0.53ms | N/A |
+
+> `CachedSearcher` 的内存使用和搜索速度在不同场景下可能会有明显波动，一般介于 `TreeSearcher` 和 `SimpleSearcher` 之间。
  
-对于索引模型，一些常量参数可以进一步调整，从而在速度与内存消耗间取得平衡。
+对于 `TreeSearcher` 和 `CachedSearcher`，一些常量参数可以进一步调整，从而在速度与内存消耗间取得平衡。
  
 ## 示例
 
