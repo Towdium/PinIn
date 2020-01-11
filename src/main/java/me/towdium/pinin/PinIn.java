@@ -19,9 +19,9 @@ public class PinIn {
     private Cache<String, Phoneme> cPhoneme = new Cache<>(s -> new Phoneme(s, this));
     private Cache<String, Pinyin> cPinyin = new Cache<>(s -> new Pinyin(s, this, total++));
     private Chinese[] cChar = new Chinese[MAX - MIN];
-    private WeakHashMap<Object, Runnable> listeners = new WeakHashMap<>();
 
     private Keyboard keyboard;
+    private int modification = 0;
     private boolean fZh2Z;
     private boolean fSh2S;
     private boolean fCh2C;
@@ -45,10 +45,6 @@ public class PinIn {
         this.fIng2In = fIng2In;
         this.fEng2En = fEng2En;
         this.fU2V = fU2V;
-    }
-
-    public void listen(Object owner, Runnable r) {
-        listeners.put(owner, r);
     }
 
     public boolean contains(String s1, CharSequence s2) {
@@ -123,6 +119,10 @@ public class PinIn {
         return new Config(this);
     }
 
+    public Ticket ticket(Runnable r) {
+        return new Ticket(r);
+    }
+
     public int total() {
         return total;
     }
@@ -138,7 +138,7 @@ public class PinIn {
         this.fU2V = c.fU2V;
         cPhoneme.foreach((s, p) -> p.reload(s, this));
         cPinyin.foreach((s, p) -> p.reload(s, this));
-        listeners.values().forEach(Runnable::run);
+        modification++;
     }
 
     public static class Config {
@@ -189,7 +189,7 @@ public class PinIn {
             return this;
         }
 
-        public Config setfIng2In(boolean fIng2In) {
+        public Config fIng2In(boolean fIng2In) {
             this.fIng2In = fIng2In;
             return this;
         }
@@ -207,6 +207,24 @@ public class PinIn {
         public PinIn commit() {
             context.config(this);
             return context;
+        }
+    }
+
+    public class Ticket {
+        int modification;
+        Runnable runnable;
+
+        private Ticket(Runnable r) {
+            runnable = r;
+            modification = PinIn.this.modification;
+        }
+
+        public void renew() {
+            int i = PinIn.this.modification;
+            if (modification != i) {
+                modification = i;
+                runnable.run();
+            }
         }
     }
 }

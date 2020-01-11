@@ -11,6 +11,8 @@ public interface Searcher<T> {
 
     PinIn context();
 
+    void refresh();
+
     enum Logic {
         BEGIN {
             @Override

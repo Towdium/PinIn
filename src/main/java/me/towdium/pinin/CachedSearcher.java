@@ -15,6 +15,7 @@ public class CachedSearcher<T> extends SimpleSearcher<T> {
     float scale;
     int len = -1;
     int total = 0;
+    PinIn.Ticket ticket;
     LinkedHashMap<String, IntList> cache = new LinkedHashMap<String, IntList>() {
         @Override
         protected boolean removeEldestEntry(Map.Entry eldest) {
@@ -33,10 +34,11 @@ public class CachedSearcher<T> extends SimpleSearcher<T> {
     public CachedSearcher(Logic logic, PinIn context, float scale) {
         super(logic, context);
         this.scale = scale;
-        context.listen(this, this::reset);
+        ticket = context.ticket(this::reset);
     }
 
     public void put(String name, T identifier) {
+        ticket.renew();
         reset();
         total += name.length();
         all.add(all.size());
@@ -45,6 +47,7 @@ public class CachedSearcher<T> extends SimpleSearcher<T> {
     }
 
     public List<T> search(String name) {
+        ticket.renew();
         if (len == -1) len = (int) Math.ceil(Math.log(max()) / Math.log(8));
         return test(name).stream().map(i -> objs.get(i)).collect(Collectors.toList());
     }
@@ -82,5 +85,10 @@ public class CachedSearcher<T> extends SimpleSearcher<T> {
 
     public void reset() {
         cache.clear();
+    }
+
+    @Override
+    public void refresh() {
+        ticket.renew();
     }
 }

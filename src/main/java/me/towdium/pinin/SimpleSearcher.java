@@ -40,4 +40,8 @@ public class SimpleSearcher<T> implements Searcher<T> {
     public PinIn context() {
         return context;
     }
+
+    @Override
+    public void refresh() {
+    }
 }

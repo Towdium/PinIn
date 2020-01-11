@@ -29,17 +29,18 @@ public class TreeSearcher<T> implements Searcher<T> {
     final Accelerator acc;
     final PinIn context;
     final Logic logic;
+    final PinIn.Ticket ticket;
     static final int THRESHOLD = 128;
 
-    private void refresh() {
-        naccs.forEach(i -> i.reload(this));
+    public void refresh() {
+        ticket.renew();
     }
 
     public TreeSearcher(Logic logic, PinIn context) {
         this.logic = logic;
         this.context = context;
         acc = new Accelerator(context);
-        context.listen(this, this::refresh);
+        ticket = context.ticket(() -> naccs.forEach(i -> i.reload(this)));
     }
 
     public void put(String name, T identifier) {

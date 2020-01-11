@@ -22,7 +22,7 @@ import static me.towdium.pinin.Searcher.Logic.EQUAL;
 
 public class PinInTest {
     @Test
-    @SuppressWarnings({"UnusedAssignment", "unused"})
+    @SuppressWarnings("unused")
     public void performance() throws IOException {
         List<String> search = new ArrayList<>();
         search.add("boli");
@@ -75,7 +75,7 @@ public class PinInTest {
                 time = System.currentTimeMillis();
                 loop = source.equals("large") ? 10 : 100;
                 for (int i = 0; i < loop; i++) {
-                    ((CachedSearcher) searcher).reset();
+                    ((CachedSearcher<?>) searcher).reset();
                     is = searcher.search(s);
                 }
                 t = (System.currentTimeMillis() - time) / (float) loop;
