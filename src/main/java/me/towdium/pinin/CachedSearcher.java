@@ -38,7 +38,7 @@ public class CachedSearcher<T> extends SimpleSearcher<T> {
     }
 
     public void put(String name, T identifier) {
-        ticket.renew();
+        refresh();
         reset();
         total += name.length();
         all.add(all.size());
@@ -47,7 +47,7 @@ public class CachedSearcher<T> extends SimpleSearcher<T> {
     }
 
     public List<T> search(String name) {
-        ticket.renew();
+        refresh();
         if (len == -1) len = (int) Math.ceil(Math.log(max()) / Math.log(8));
         return test(name).stream().map(i -> objs.get(i)).collect(Collectors.toList());
     }

@@ -44,6 +44,7 @@ public class TreeSearcher<T> implements Searcher<T> {
     }
 
     public void put(String name, T identifier) {
+        refresh();
         int pos = acc.put(name);
         int end = logic == Logic.CONTAIN ? name.length() : 1;
         for (int i = 0; i < end; i++)
@@ -52,6 +53,7 @@ public class TreeSearcher<T> implements Searcher<T> {
     }
 
     public List<T> search(String s) {
+        refresh();
         acc.search(s, logic);
         IntSet ret = new IntRBTreeSet();
         root.get(this, ret, 0);
