@@ -148,6 +148,7 @@ public class PinInTest {
         assert p.contains("流体", "liuti");
         assert p.contains("轰20", "hong2");
         assert p.contains("hong2", "hong2");
+        assert !p.begins("", "a");
     }
 
     @Test

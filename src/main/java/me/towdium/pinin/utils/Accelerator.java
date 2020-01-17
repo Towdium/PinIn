@@ -60,6 +60,7 @@ public class Accelerator {
     // start - start point in raw text
     public boolean check(int offset, int start) {
         if (offset == search.length()) return partial || end(start);
+        if (end(start)) return false;
 
         Char r = context.genChar(get(start));
         IndexSet s = get(r, offset);
