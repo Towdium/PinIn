@@ -7,8 +7,6 @@ import me.towdium.pinin.elements.Pinyin;
 import me.towdium.pinin.utils.Cache;
 import me.towdium.pinin.utils.Matcher;
 
-import java.util.WeakHashMap;
-
 @SuppressWarnings("unused")
 public class PinIn {
     public static final int MIN = 0x3000;
@@ -116,7 +114,7 @@ public class PinIn {
     }
 
     public Config config() {
-        return new Config(this);
+        return new Config();
     }
 
     public Ticket ticket(Runnable r) {
@@ -128,20 +126,24 @@ public class PinIn {
     }
 
     private void config(Config c) {
-        this.keyboard = c.keyboard;
-        this.fZh2Z = c.fZh2Z;
-        this.fSh2S = c.fSh2S;
-        this.fCh2C = c.fCh2C;
-        this.fAng2An = c.fAng2An;
-        this.fIng2In = c.fIng2In;
-        this.fEng2En = c.fEng2En;
-        this.fU2V = c.fU2V;
+        if (fAng2An == c.fAng2An && fEng2En == c.fEng2En && fIng2In == c.fIng2In
+                && fZh2Z == c.fZh2Z && fSh2S == c.fSh2S && fCh2C == c.fCh2C
+                && keyboard == c.keyboard && fU2V == c.fU2V) return;
+
+        keyboard = c.keyboard;
+        fZh2Z = c.fZh2Z;
+        fSh2S = c.fSh2S;
+        fCh2C = c.fCh2C;
+        fAng2An = c.fAng2An;
+        fIng2In = c.fIng2In;
+        fEng2En = c.fEng2En;
+        fU2V = c.fU2V;
         cPhoneme.foreach((s, p) -> p.reload(s, this));
         cPinyin.foreach((s, p) -> p.reload(s, this));
         modification++;
     }
 
-    public static class Config {
+    public class Config {
         public Keyboard keyboard;
         public boolean fZh2Z;
         public boolean fSh2S;
@@ -150,18 +152,16 @@ public class PinIn {
         public boolean fIng2In;
         public boolean fEng2En;
         public boolean fU2V;
-        private PinIn context;
 
-        public Config(PinIn p) {
-            keyboard = p.keyboard;
-            fZh2Z = p.fZh2Z;
-            fSh2S = p.fSh2S;
-            fCh2C = p.fCh2C;
-            fAng2An = p.fAng2An;
-            fIng2In = p.fIng2In;
-            fEng2En = p.fEng2En;
-            fU2V = p.fU2V;
-            context = p;
+        private Config() {
+            keyboard = PinIn.this.keyboard;
+            fZh2Z = PinIn.this.fZh2Z;
+            fSh2S = PinIn.this.fSh2S;
+            fCh2C = PinIn.this.fCh2C;
+            fAng2An = PinIn.this.fAng2An;
+            fIng2In = PinIn.this.fIng2In;
+            fEng2En = PinIn.this.fEng2En;
+            fU2V = PinIn.this.fU2V;
         }
 
         public Config keyboard(Keyboard keyboard) {
@@ -205,8 +205,8 @@ public class PinIn {
         }
 
         public PinIn commit() {
-            context.config(this);
-            return context;
+            PinIn.this.config(this);
+            return PinIn.this;
         }
     }
 
