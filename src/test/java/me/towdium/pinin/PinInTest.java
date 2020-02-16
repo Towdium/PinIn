@@ -29,9 +29,9 @@ public class PinInTest {
         search.add("yangmao");
         search.add("hongse");
         List<Function<Logic, Searcher<Integer>>> funcs = new ArrayList<>();
-        funcs.add(l -> new TreeSearcher<>(l, new PinIn()));
-        funcs.add(l -> new CachedSearcher<>(l, new PinIn()));
-        funcs.add(l -> new SimpleSearcher<>(l, new PinIn()));
+        funcs.add(l -> new TreeSearcher<>(l, new PinIn().config().keyboard(ZIRANMA).commit()));
+        funcs.add(l -> new CachedSearcher<>(l, new PinIn().config().keyboard(ZIRANMA).commit()));
+        funcs.add(l -> new SimpleSearcher<>(l, new PinIn().config().keyboard(ZIRANMA).commit()));
         String[] sources = new String[]{"small", "large"};
         for (Function<Logic, Searcher<Integer>> i : funcs)
             for (Logic j : Logic.values())
@@ -95,7 +95,7 @@ public class PinInTest {
             //for (Integer i: is) System.out.println(strs.get(i));
 
             time = System.currentTimeMillis();
-            PinIn p = new PinIn();
+            PinIn p = new PinIn().config().keyboard(ZIRANMA).commit();
             IntSet result = new IntOpenHashSet();
             loop = 2;
             for (int j = 0; j < loop; j++) {
@@ -180,6 +180,7 @@ public class PinInTest {
         assert p.contains("合金炉", "hej");
         assert p.contains("洗矿场", "xikd4");
         assert p.contains("月球", "ytqq");
+        assert p.contains("安全", "anqr");
     }
 
     @Test

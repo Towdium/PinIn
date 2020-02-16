@@ -92,15 +92,11 @@ public class Keyboard {
 
     public static List<String> zero(String s) {
         List<String> ss = standard(s);
-        if (ss.size() == 3) return ss;
-        else {
+        if (ss.size() != 3) {
             String vowel = ss.get(0);
-            if (vowel.length() == 1) ss.add(0, vowel);
-            else {
-                ss.add(0, Character.toString(vowel.charAt(0)));
-                if (vowel.length() == 2) ss.set(1, Character.toString(vowel.charAt(1)));
-            }
-            return ss;
+            ss = Arrays.asList(Character.toString(vowel.charAt(0)), ss.get(0), ss.get(1));
+            if (vowel.length() == 2) ss.set(1, Character.toString(vowel.charAt(1)));
         }
+        return ss;
     }
 }
