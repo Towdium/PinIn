@@ -1,11 +1,6 @@
 package me.towdium.pinin.utils;
 
-import it.unimi.dsi.fastutil.chars.CharArrayList;
-import it.unimi.dsi.fastutil.chars.CharList;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
 import me.towdium.pinin.PinIn;
-import me.towdium.pinin.Searcher;
 import me.towdium.pinin.elements.Char;
 import me.towdium.pinin.elements.Pinyin;
 
@@ -14,76 +9,92 @@ import java.util.List;
 
 public class Accelerator {
     final PinIn context;
-    List<IndexSet[]> cache;
+    List<IndexSet.Storage> cache;
     String search;
-    CharList chars = new CharArrayList();
-    IntList strs = new IntArrayList();
+    Provider provider;
+    Str str = new Str();
     boolean partial;
-
-    public char get(int offset) {
-        return chars.getChar(offset);
-    }
-
-    public boolean end(int offset) {
-        return chars.getChar(offset) == '\0';
-    }
 
     public Accelerator(PinIn context) {
         this.context = context;
     }
 
-    public void search(String s, Searcher.Logic l) {
-        search = s;
-        this.partial = l != Searcher.Logic.EQUAL;
-        cache = new ArrayList<>();
+    public void search(String s) {
+        if (!s.equals(search)) {
+            search = s;
+            reset();
+        }
     }
 
-    public IndexSet get(Char c, int offset) {
+    public IndexSet get(char ch, int offset) {
+        Char c = context.genChar(ch);
         IndexSet ret = (search.charAt(offset) == c.ch ? IndexSet.ONE : IndexSet.NONE).copy();
         for (Pinyin p : c.pinyins()) ret.merge(get(p, offset));
         return ret;
     }
 
     public IndexSet get(Pinyin p, int offset) {
+        if (p.context != context) throw new IllegalArgumentException("Context mismatch");
         for (int i = cache.size(); i <= offset; i++)
-            cache.add(new IndexSet[context.total()]);
-        IndexSet[] data = cache.get(offset);
-        IndexSet ret = data[p.id];
+            cache.add(new IndexSet.Storage());
+        IndexSet.Storage data = cache.get(offset);
+        IndexSet ret = data.get(p.id);
         if (ret == null) {
             ret = p.match(search, offset, partial);
-            data[p.id] = ret;
+            data.set(ret, p.id);
         }
         return ret;
+    }
+
+    public void setProvider(Provider p) {
+        provider = p;
+    }
+
+    public void setProvider(String s) {
+        str.s = s;
+        provider = str;
+    }
+
+    public void reset() {
+        cache = new ArrayList<>();
     }
 
     // offset - offset in search string
     // start - start point in raw text
     public boolean check(int offset, int start) {
-        if (offset == search.length()) return partial || end(start);
-        if (end(start)) return false;
+        if (offset == search.length()) return partial || provider.end(start);
+        if (provider.end(start)) return false;
 
-        Char r = context.genChar(get(start));
-        IndexSet s = get(r, offset);
+        IndexSet s = get(provider.get(start), offset);
 
-        if (end(start + 1)) {
+        if (provider.end(start + 1)) {
             int i = search.length() - offset;
             return s.get(i);
         } else return !s.traverse(i -> !check(offset + i, start + 1));
     }
 
     public boolean matches(int offset, int start) {
-        if (partial) throw new IllegalStateException("Internal error");
+        if (partial) {
+            partial = false;
+            reset();
+        }
         return check(offset, start);
     }
 
     public boolean begins(int offset, int start) {
-        if (!partial) throw new IllegalStateException("Internal error");
+        if (!partial) {
+            partial = true;
+            reset();
+        }
         return check(offset, start);
     }
 
     public boolean contains(int offset, int start) {
-        if (!partial) throw new IllegalStateException("Internal error");
-        for (int i = start; !end(i); i++) {
+        if (!partial) {
+            partial = true;
+            reset();
+        }
+        for (int i = start; !provider.end(i); i++) {
             if (check(offset, i)) return true;
         }
         return false;
@@ -93,26 +104,32 @@ public class Accelerator {
         return search;
     }
 
-    public int put(String s) {
-        strs.add(chars.size());
-        for (char c : s.toCharArray()) {
-            chars.add(c);
-            context.genChar(c);
-        }
-        chars.add('\0');
-        return strs.getInt(strs.size() - 1);
-    }
-
     public int common(int s1, int s2, int max) {
         for (int i = 0; ; i++) {
             if (i >= max) return max;
-            char a = get(s1 + i);
-            char b = get(s2 + i);
+            char a = provider.get(s1 + i);
+            char b = provider.get(s2 + i);
             if (a != b || a == '\0') return i;
         }
     }
 
-    public IntList strs() {
-        return strs;
+    public interface Provider {
+        boolean end(int i);
+
+        char get(int i);
+    }
+
+    static class Str implements Provider {
+        String s;
+
+        @Override
+        public boolean end(int i) {
+            return i >= s.length();
+        }
+
+        @Override
+        public char get(int i) {
+            return s.charAt(i);
+        }
     }
 }

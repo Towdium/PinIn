@@ -4,10 +4,11 @@ import it.unimi.dsi.fastutil.chars.*;
 import it.unimi.dsi.fastutil.ints.*;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import me.towdium.pinin.elements.Chinese;
 import me.towdium.pinin.elements.Phoneme;
 import me.towdium.pinin.elements.Pinyin;
 import me.towdium.pinin.utils.Accelerator;
-import me.towdium.pinin.utils.Matcher;
+import me.towdium.pinin.utils.Compressor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,25 +28,23 @@ public class TreeSearcher<T> implements Searcher<T> {
     List<T> objects = new ObjectArrayList<>();
     List<NAcc<T>> naccs = new ArrayList<>();
     final Accelerator acc;
+    final Compressor strs = new Compressor();
     final PinIn context;
     final Logic logic;
     final PinIn.Ticket ticket;
     static final int THRESHOLD = 128;
 
-    public void refresh() {
-        ticket.renew();
-    }
-
     public TreeSearcher(Logic logic, PinIn context) {
         this.logic = logic;
         this.context = context;
         acc = new Accelerator(context);
+        acc.setProvider(strs);
         ticket = context.ticket(() -> naccs.forEach(i -> i.reload(this)));
     }
 
     public void put(String name, T identifier) {
-        refresh();
-        int pos = acc.put(name);
+        ticket.renew();
+        int pos = strs.put(name);
         int end = logic == Logic.CONTAIN ? name.length() : 1;
         for (int i = 0; i < end; i++)
             root = root.put(this, pos + i, objects.size());
@@ -53,8 +52,8 @@ public class TreeSearcher<T> implements Searcher<T> {
     }
 
     public List<T> search(String s) {
-        refresh();
-        acc.search(s, logic);
+        ticket.renew();
+        acc.search(s);
         IntSet ret = new IntRBTreeSet();
         root.get(this, ret, 0);
         return ret.stream().map(i -> objects.get(i))
@@ -106,11 +105,11 @@ public class TreeSearcher<T> implements Searcher<T> {
 
         private void cut(TreeSearcher<T> p, int offset) {
             NMap<T> insert = new NMap<>();
-            if (offset + 1 == end) insert.put(p.acc.get(offset), exit);
+            if (offset + 1 == end) insert.put(p.strs.get(offset), exit);
             else {
                 NSlice<T> half = new NSlice<>(offset + 1, end);
                 half.exit = exit;
-                insert.put(p.acc.get(offset), half);
+                insert.put(p.strs.get(offset), half);
             }
             exit = insert;
             end = offset;
@@ -122,8 +121,8 @@ public class TreeSearcher<T> implements Searcher<T> {
             else if (offset == p.acc.search().length()) {
                 if (p.logic != EQUAL) exit.get(p, ret);
             } else {
-                char ch = p.acc.get(this.start + start);
-                p.acc.get(p.context.genChar(ch), offset).foreach(i ->
+                char ch = p.strs.get(this.start + start);
+                p.acc.get(ch, offset).foreach(i ->
                         get(p, ret, offset + i, start + 1));
             }
         }
@@ -170,9 +169,9 @@ public class TreeSearcher<T> implements Searcher<T> {
 
         private int match(TreeSearcher<T> p) {
             for (int i = 0; ; i++) {
-                char a = p.acc.get(data.getInt(0) + i);
+                char a = p.strs.get(data.getInt(0) + i);
                 for (int j = 1; j < data.size() / 2; j++) {
-                    char b = p.acc.get(data.getInt(j * 2) + i);
+                    char b = p.strs.get(data.getInt(j * 2) + i);
                     if (a != b || a == '\0') return i;
                 }
             }
@@ -189,7 +188,7 @@ public class TreeSearcher<T> implements Searcher<T> {
                 if (p.logic == EQUAL) ret.addAll(leaves);
                 else get(p, ret);
             } else if (children != null) {
-                children.forEach((c, n) -> p.acc.get(p.context.genChar(c), offset)
+                children.forEach((c, n) -> p.acc.get(c, offset)
                         .foreach(i -> n.get(p, ret, offset + i)));
             }
         }
@@ -202,13 +201,13 @@ public class TreeSearcher<T> implements Searcher<T> {
 
         @Override
         public NMap<T> put(TreeSearcher<T> p, int name, int identifier) {
-            if (p.acc.get(name) == '\0') {
+            if (p.strs.get(name) == '\0') {
                 if (leaves.size() >= THRESHOLD && leaves instanceof IntArraySet)
                     leaves = new IntOpenHashSet(leaves);
                 leaves.add(identifier);
             } else {
                 init();
-                char ch = p.acc.get(name);
+                char ch = p.strs.get(name);
                 Node<T> sub = children.get(ch);
                 if (sub == null) put(ch, sub = new NDense<>());
                 sub = sub.put(p, name + 1, identifier);
@@ -250,7 +249,7 @@ public class TreeSearcher<T> implements Searcher<T> {
                 if (n != null) n.get(p, ret, offset + 1);
                 index.forEach((k, v) -> {
                     if (!k.match(p.acc.search(), offset, true).isEmpty()) {
-                        v.forEach((IntConsumer) i -> p.acc.get(p.context.genChar((char) i), offset)
+                        v.forEach((IntConsumer) i -> p.acc.get((char) i, offset)
                                 .foreach(j -> children.get((char) i).get(p, ret, offset + j)));
                     }
                 });
@@ -260,7 +259,7 @@ public class TreeSearcher<T> implements Searcher<T> {
         @Override
         public NAcc<T> put(TreeSearcher<T> p, int name, int identifier) {
             super.put(p, name, identifier);
-            index(p, p.acc.get(name));
+            index(p, p.strs.get(name));
             return this;
         }
 
@@ -270,7 +269,7 @@ public class TreeSearcher<T> implements Searcher<T> {
         }
 
         private void index(TreeSearcher<T> p, char c) {
-            if (!Matcher.isChinese(c)) return;
+            if (!Chinese.isChinese(c)) return;
             for (Pinyin py : Pinyin.get(c, p.context)) {
                 index.compute(py.phonemes()[0], (j, cs) -> {
                     if (cs == null) return new CharArraySet();

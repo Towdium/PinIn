@@ -15,8 +15,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static me.towdium.pinin.PinIn.MAX;
-import static me.towdium.pinin.PinIn.MIN;
+import static me.towdium.pinin.elements.Chinese.MAX;
+import static me.towdium.pinin.elements.Chinese.MIN;
 
 /**
  * Author: Towdium
@@ -27,6 +27,7 @@ public class Pinyin implements Element {
     private static final String[] EMPTY = new String[0];
     boolean duo = false;
     public final int id;
+    public final PinIn context;
     String raw;
 
     static {
@@ -53,8 +54,9 @@ public class Pinyin implements Element {
 
     public Pinyin(String str, PinIn p, int id) {
         raw = str;
-        reload(str, p);
         this.id = id;
+        this.context = p;
+        reload(str);
     }
 
     public Phoneme[] phonemes() {
@@ -85,14 +87,14 @@ public class Pinyin implements Element {
         return ret.toString();
     }
 
-    public void reload(String str, PinIn p) {
+    public void reload(String str) {
         List<Phoneme> l = new ArrayList<>();
-        for (String s : p.keyboard().split(str)) {
-            Phoneme ph = p.genPhoneme(s);
+        for (String s : context.keyboard().split(str)) {
+            Phoneme ph = context.genPhoneme(s);
             if (!ph.isEmpty()) l.add(ph);
         }
         phonemes = l.toArray(new Phoneme[]{});
-        duo = p.keyboard().duo;
+        duo = context.keyboard().duo;
     }
 
     public String format(Format f) {

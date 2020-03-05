@@ -3,7 +3,6 @@ package me.towdium.pinin.elements;
 
 import me.towdium.pinin.PinIn;
 import me.towdium.pinin.utils.IndexSet;
-import me.towdium.pinin.utils.Matcher;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,12 +12,15 @@ import java.util.Arrays;
  * Date: 29/04/19
  */
 public class Chinese extends Char {
+    public static final int MIN = 0x3000;
+    public static final int MAX = 0x9FFF;
+
     Pinyin[] pinyin;
 
     public Chinese(char ch, PinIn p) {
         super(ch);
         ArrayList<Pinyin> list = new ArrayList<>();
-        if (Matcher.isChinese(ch)) {
+        if (isChinese(ch)) {
             Pinyin[] pinyin = Pinyin.get(ch, p);
             list.addAll(Arrays.asList(pinyin));
         }
@@ -35,5 +37,9 @@ public class Chinese extends Char {
     @Override
     public Pinyin[] pinyins() {
         return pinyin;
+    }
+
+    public static boolean isChinese(char i) {
+        return MIN <= i && i < MAX;
     }
 }

@@ -2,6 +2,7 @@ package me.towdium.pinin;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import me.towdium.pinin.utils.Accelerator;
+import me.towdium.pinin.utils.Compressor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.List;
 public class SimpleSearcher<T> implements Searcher<T> {
     List<T> objs = new ArrayList<>();
     final Accelerator acc;
+    final Compressor strs = new Compressor();
     final PinIn context;
     final Logic logic;
 
@@ -16,21 +18,24 @@ public class SimpleSearcher<T> implements Searcher<T> {
         this.context = context;
         this.logic = logic;
         acc = new Accelerator(context);
+        acc.setProvider(strs);
     }
 
     @Override
     public void put(String name, T identifier) {
-        acc.put(name);
+        strs.put(name);
+        for (int i = 0; i < name.length(); i++)
+            context.genChar(name.charAt(i));
         objs.add(identifier);
     }
 
     @Override
     public List<T> search(String name) {
         List<T> ret = new ArrayList<>();
-        acc.search(name, logic);
-        IntList strs = acc.strs();
-        for (int i = 0; i < strs.size(); i++) {
-            int s = strs.getInt(i);
+        acc.search(name);
+        IntList offsets = strs.offsets();
+        for (int i = 0; i < offsets.size(); i++) {
+            int s = offsets.getInt(i);
             if (logic.test(acc, 0, s)) ret.add(objs.get(i));
         }
         return ret;
@@ -39,9 +44,5 @@ public class SimpleSearcher<T> implements Searcher<T> {
     @Override
     public PinIn context() {
         return context;
-    }
-
-    @Override
-    public void refresh() {
     }
 }

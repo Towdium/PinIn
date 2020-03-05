@@ -5,11 +5,13 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import me.towdium.pinin.Searcher.Logic;
 import me.towdium.pinin.elements.Char;
 import me.towdium.pinin.elements.Pinyin;
+import me.towdium.pinin.utils.Accelerator;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,15 +25,15 @@ import static me.towdium.pinin.Searcher.Logic.EQUAL;
 public class PinInTest {
     @Test
     @SuppressWarnings("unused")
-    public void performance() throws IOException {
+    public void performance() throws IOException, NoSuchFieldException, IllegalAccessException {
         List<String> search = new ArrayList<>();
         search.add("boli");
         search.add("yangmao");
         search.add("hongse");
         List<Function<Logic, Searcher<Integer>>> funcs = new ArrayList<>();
-        funcs.add(l -> new TreeSearcher<>(l, new PinIn().config().keyboard(ZIRANMA).commit()));
-        funcs.add(l -> new CachedSearcher<>(l, new PinIn().config().keyboard(ZIRANMA).commit()));
-        funcs.add(l -> new SimpleSearcher<>(l, new PinIn().config().keyboard(ZIRANMA).commit()));
+        funcs.add(l -> new TreeSearcher<>(l, new PinIn()));
+        funcs.add(l -> new CachedSearcher<>(l, new PinIn()));
+        funcs.add(l -> new SimpleSearcher<>(l, new PinIn()));
         String[] sources = new String[]{"small", "large"};
         for (Function<Logic, Searcher<Integer>> i : funcs)
             for (Logic j : Logic.values())
@@ -39,7 +41,7 @@ public class PinInTest {
     }
 
     private void performance(Logic logic, String source, List<String> search,
-                             Function<Logic, Searcher<Integer>> func) throws IOException {
+                             Function<Logic, Searcher<Integer>> func) throws IOException, NoSuchFieldException, IllegalAccessException {
         long start = System.currentTimeMillis();
         Searcher<Integer> searcher = func.apply(logic);
         System.out.print("Test performance, logic: " + logic.toString().toLowerCase() + ", source: " + source);
@@ -68,7 +70,12 @@ public class PinInTest {
         float traverse = 0;
         float contains = 0;
 
+
         for (String s : search) {
+            Field field;
+            if (searcher instanceof CachedSearcher) field = SimpleSearcher.class.getDeclaredField("acc");
+            else field = searcher.getClass().getDeclaredField("acc");
+            field.setAccessible(true);
             List<Integer> is = null;
             float t;
             if (searcher instanceof CachedSearcher) {
@@ -87,15 +94,21 @@ public class PinInTest {
             loop = 10000;
             if (searcher instanceof SimpleSearcher) loop /= 100;
             if (source.equals("large")) loop /= 10;
-            for (int i = 0; i < loop; i++) is = searcher.search(s);
+            for (int i = 0; i < loop; i++) {
+                is = searcher.search(s);
+                Accelerator a = (Accelerator) field.get(searcher);
+                a.reset();
+            }
             t = (System.currentTimeMillis() - time) / (float) loop;
             acc += t;
             //System.out.println("Accelerated search time: " + t);
 
             //for (Integer i: is) System.out.println(strs.get(i));
 
+            field = PinIn.class.getDeclaredField("acc");
+            field.setAccessible(true);
             time = System.currentTimeMillis();
-            PinIn p = new PinIn().config().keyboard(ZIRANMA).commit();
+            PinIn p = new PinIn();
             IntSet result = new IntOpenHashSet();
             loop = 2;
             for (int j = 0; j < loop; j++) {
@@ -103,6 +116,8 @@ public class PinInTest {
                     String k = strs.get(i);
                     if (logic.test(p, k, s)) result.add(i);
                 }
+                Accelerator a = (Accelerator) field.get(p);
+                a.reset();
             }
             t = (System.currentTimeMillis() - time) / (float) loop;
             traverse += t;

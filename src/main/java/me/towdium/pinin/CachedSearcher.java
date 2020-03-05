@@ -38,8 +38,9 @@ public class CachedSearcher<T> extends SimpleSearcher<T> {
     }
 
     public void put(String name, T identifier) {
-        refresh();
         reset();
+        for (int i = 0; i < name.length(); i++)
+            context.genChar(name.charAt(i));
         total += name.length();
         all.add(all.size());
         len = -1;
@@ -47,7 +48,7 @@ public class CachedSearcher<T> extends SimpleSearcher<T> {
     }
 
     public List<T> search(String name) {
-        refresh();
+        ticket.renew();
         if (len == -1) len = (int) Math.ceil(Math.log(max()) / Math.log(8));
         return test(name).stream().map(i -> objs.get(i)).collect(Collectors.toList());
     }
@@ -60,8 +61,8 @@ public class CachedSearcher<T> extends SimpleSearcher<T> {
             if (name.length() > len) throw new RuntimeException("Unnecessary filter");
             IntArrayList tmp = new IntArrayList();
             IntList is = filter(name.substring(0, name.length() - 1));
-            acc.search(name, filter);
-            for (int i : is) if (filter.test(acc, 0, acc.strs().getInt(i))) tmp.add(i);
+            acc.search(name);
+            for (int i : is) if (filter.test(acc, 0, strs.offsets().getInt(i))) tmp.add(i);
             if (tmp.size() == is.size()) ret = is;
             else {
                 tmp.trim();
@@ -77,18 +78,13 @@ public class CachedSearcher<T> extends SimpleSearcher<T> {
         IntList is = filter(name.substring(0, Math.min(name.length(), len)));
         if (logic == EQUAL || name.length() > len) {
             IntArrayList ret = new IntArrayList();
-            acc.search(name, logic);
-            for (int i : is) if (logic.test(acc, 0, acc.strs().getInt(i))) ret.add(i);
+            acc.search(name);
+            for (int i : is) if (logic.test(acc, 0, strs.offsets().getInt(i))) ret.add(i);
             return ret;
         } else return is;
     }
 
     public void reset() {
         cache.clear();
-    }
-
-    @Override
-    public void refresh() {
-        ticket.renew();
     }
 }

@@ -6,8 +6,6 @@ import me.towdium.pinin.utils.IndexSet;
 import java.util.Collections;
 import java.util.HashSet;
 
-import static me.towdium.pinin.utils.Matcher.strCmp;
-
 public class Phoneme implements Element {
     String[] strs;
 
@@ -35,12 +33,19 @@ public class Phoneme implements Element {
         return strs.length == 1 && strs[0].isEmpty();
     }
 
+    static int strCmp(String a, String b, int aStart) {
+        int len = Math.min(a.length() - aStart, b.length());
+        for (int i = 0; i < len; i++)
+            if (a.charAt(i + aStart) != b.charAt(i)) return i;
+        return len;
+    }
+
     @Override
     public IndexSet match(String source, int start, boolean partial) {
         IndexSet ret = new IndexSet();
         if (strs.length == 1 && strs[0].isEmpty()) return ret;
         for (String str : strs) {
-            int size = strCmp(source, str, start, 0, Integer.MAX_VALUE);
+            int size = strCmp(source, str, start);
             if (partial && start + size == source.length()) ret.set(size);  // ending match
             else if (size == str.length()) ret.set(size); // full match
         }

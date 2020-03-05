@@ -78,4 +78,50 @@ public class IndexSet {
     public IndexSet copy() {
         return new IndexSet(value);
     }
+
+    static class Immutable extends IndexSet {
+        @Override
+        public void set(int index) {
+            throw new UnsupportedOperationException("Immutable collection");
+        }
+
+        @Override
+        public void merge(IndexSet s) {
+            throw new UnsupportedOperationException("Immutable collection");
+        }
+
+        @Override
+        public void offset(int i) {
+            throw new UnsupportedOperationException("Immutable collection");
+        }
+    }
+
+    static class Storage {
+        IndexSet tmp = new Immutable();
+        int[] data = new int[16];
+
+        public void set(IndexSet is, int index) {
+            if (index >= data.length) {
+                int size = index + 2;
+                size |= size >> 1;
+                size |= size >> 2;
+                size |= size >> 4;
+                size |= size >> 8;
+                size |= size >> 16;
+                int[] replace = new int[size + 1];
+                System.arraycopy(data, 0, replace, 0, data.length);
+                data = replace;
+            }
+            data[index] = is.value + 1;
+        }
+
+        // nullable
+        public IndexSet get(int index) {
+            if (index >= data.length) return null;
+            int ret = data[index];
+            if (ret == 0) return null;
+            tmp.value = ret - 1;
+            return tmp;
+        }
+    }
 }

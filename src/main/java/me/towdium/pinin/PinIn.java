@@ -4,19 +4,20 @@ import me.towdium.pinin.elements.Char;
 import me.towdium.pinin.elements.Chinese;
 import me.towdium.pinin.elements.Phoneme;
 import me.towdium.pinin.elements.Pinyin;
+import me.towdium.pinin.utils.Accelerator;
 import me.towdium.pinin.utils.Cache;
-import me.towdium.pinin.utils.Matcher;
+
+import static me.towdium.pinin.elements.Chinese.MAX;
+import static me.towdium.pinin.elements.Chinese.MIN;
 
 @SuppressWarnings("unused")
 public class PinIn {
-    public static final int MIN = 0x3000;
-    public static final int MAX = 0x9FFF;
-
     private int total = 0;
 
     private Cache<String, Phoneme> cPhoneme = new Cache<>(s -> new Phoneme(s, this));
     private Cache<String, Pinyin> cPinyin = new Cache<>(s -> new Pinyin(s, this, total++));
     private Chinese[] cChar = new Chinese[MAX - MIN];
+    private Accelerator acc;
 
     private Keyboard keyboard;
     private int modification = 0;
@@ -43,18 +44,25 @@ public class PinIn {
         this.fIng2In = fIng2In;
         this.fEng2En = fEng2En;
         this.fU2V = fU2V;
+        acc = new Accelerator(this);
     }
 
-    public boolean contains(String s1, CharSequence s2) {
-        return Matcher.contains(s1, s2, this);
+    public boolean contains(String s1, String s2) {
+        acc.setProvider(s1);
+        acc.search(s2);
+        return acc.contains(0, 0);
     }
 
-    public boolean begins(String s1, CharSequence s2) {
-        return Matcher.begins(s1, s2, this);
+    public boolean begins(String s1, String s2) {
+        acc.setProvider(s1);
+        acc.search(s2);
+        return acc.begins(0, 0);
     }
 
-    public boolean matches(String k, String s) {
-        return Matcher.matches(k, s, this);
+    public boolean matches(String s1, String s2) {
+        acc.setProvider(s1);
+        acc.search(s2);
+        return acc.matches(0, 0);
     }
 
     public Phoneme genPhoneme(String s) {
@@ -66,7 +74,7 @@ public class PinIn {
     }
 
     public Char genChar(char c) {
-        if (Matcher.isChinese(c)) {
+        if (Chinese.isChinese(c)) {
             Chinese ret = cChar[c - MIN];
             if (ret == null) {
                 ret = new Chinese(c, this);
@@ -121,10 +129,6 @@ public class PinIn {
         return new Ticket(r);
     }
 
-    public int total() {
-        return total;
-    }
-
     private void config(Config c) {
         if (fAng2An == c.fAng2An && fEng2En == c.fEng2En && fIng2In == c.fIng2In
                 && fZh2Z == c.fZh2Z && fSh2S == c.fSh2S && fCh2C == c.fCh2C
@@ -139,7 +143,7 @@ public class PinIn {
         fEng2En = c.fEng2En;
         fU2V = c.fU2V;
         cPhoneme.foreach((s, p) -> p.reload(s, this));
-        cPinyin.foreach((s, p) -> p.reload(s, this));
+        cPinyin.foreach((s, p) -> p.reload(s));
         modification++;
     }
 
