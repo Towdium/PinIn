@@ -15,7 +15,7 @@ public class CachedSearcher<T> extends SimpleSearcher<T> {
     float scale;
     int len = -1;
     int total = 0;
-    PinIn.Ticket ticket;
+
     LinkedHashMap<String, IntList> cache = new LinkedHashMap<String, IntList>() {
         @Override
         protected boolean removeEldestEntry(Map.Entry eldest) {
@@ -34,7 +34,7 @@ public class CachedSearcher<T> extends SimpleSearcher<T> {
     public CachedSearcher(Logic logic, PinIn context, float scale) {
         super(logic, context);
         this.scale = scale;
-        ticket = context.ticket(this::reset);
+
     }
 
     public void put(String name, T identifier) {
@@ -84,7 +84,9 @@ public class CachedSearcher<T> extends SimpleSearcher<T> {
         } else return is;
     }
 
-    public void reset() {
+    @Override
+    protected void reset() {
+        super.reset();
         cache.clear();
     }
 }

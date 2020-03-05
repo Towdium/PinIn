@@ -39,7 +39,10 @@ public class TreeSearcher<T> implements Searcher<T> {
         this.context = context;
         acc = new Accelerator(context);
         acc.setProvider(strs);
-        ticket = context.ticket(() -> naccs.forEach(i -> i.reload(this)));
+        ticket = context.ticket(() -> {
+            naccs.forEach(i -> i.reload(this));
+            acc.reset();
+        });
     }
 
     public void put(String name, T identifier) {

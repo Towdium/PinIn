@@ -13,12 +13,14 @@ public class SimpleSearcher<T> implements Searcher<T> {
     final Compressor strs = new Compressor();
     final PinIn context;
     final Logic logic;
+    final PinIn.Ticket ticket;
 
     public SimpleSearcher(Logic logic, PinIn context) {
         this.context = context;
         this.logic = logic;
         acc = new Accelerator(context);
         acc.setProvider(strs);
+        ticket = context.ticket(this::reset);
     }
 
     @Override
@@ -44,5 +46,9 @@ public class SimpleSearcher<T> implements Searcher<T> {
     @Override
     public PinIn context() {
         return context;
+    }
+
+    protected void reset() {
+        acc.reset();
     }
 }
