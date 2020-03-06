@@ -67,6 +67,10 @@ public class TreeSearcher<T> implements Searcher<T> {
         return context;
     }
 
+    public void refresh() {
+        ticket.renew();
+    }
+
     interface Node<T> {
         void get(TreeSearcher<T> p, IntSet ret, int offset);
 

@@ -145,7 +145,7 @@ public class PinInTest {
         System.out.print(", loop search: " + String.format("%.1f", traverse / search.size()));
         System.out.print(", construction: " + String.format("%.1f", construct));
         if (searcher instanceof CachedSearcher)
-            System.out.print(", warm up : " + String.format("%.1f", warm / search.size()));
+            System.out.print(", warm up: " + String.format("%.1f", warm / search.size()));
         System.out.print(", accelerated: " + String.format("%.3f", acc / search.size()));
         System.out.println(", total: " + (System.currentTimeMillis() - start));
     }
