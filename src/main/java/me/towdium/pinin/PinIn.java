@@ -16,7 +16,8 @@ public class PinIn {
 
     private Cache<String, Phoneme> cPhoneme = new Cache<>(s -> new Phoneme(s, this));
     private Cache<String, Pinyin> cPinyin = new Cache<>(s -> new Pinyin(s, this, total++));
-    private Chinese[] cChar = new Chinese[MAX - MIN];
+    private Cache<Character, Chinese> cChar = new Cache<>(c -> new Chinese(c, this));
+    private Chinese[] chars = new Chinese[MAX - MIN];
     private Accelerator acc;
 
     private Keyboard keyboard;
@@ -75,10 +76,10 @@ public class PinIn {
 
     public Char genChar(char c) {
         if (Chinese.isChinese(c)) {
-            Chinese ret = cChar[c - MIN];
+            Chinese ret = chars[c - MIN];
             if (ret == null) {
-                ret = new Chinese(c, this);
-                cChar[c - MIN] = ret;
+                ret = cChar.get(c);
+                chars[c - MIN] = ret;
             }
             return ret;
         } else return new Char(c);
@@ -143,7 +144,7 @@ public class PinIn {
         fEng2En = c.fEng2En;
         fU2V = c.fU2V;
         cPhoneme.foreach((s, p) -> p.reload(s, this));
-        cPinyin.foreach((s, p) -> p.reload(s));
+        cPinyin.foreach((s, p) -> p.reload(s, this));
         modification++;
     }
 

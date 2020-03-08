@@ -1,5 +1,6 @@
 package me.towdium.pinin.elements;
 
+import me.towdium.pinin.Keyboard;
 import me.towdium.pinin.PinIn;
 import me.towdium.pinin.utils.IndexSet;
 import me.towdium.pinin.utils.Slice;
@@ -8,10 +9,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -27,8 +25,8 @@ public class Pinyin implements Element {
     private static final String[] EMPTY = new String[0];
     boolean duo = false;
     public final int id;
-    public final PinIn context;
     String raw;
+    private static Map<Character, Phoneme> SPECIAL = new HashMap<>();
 
     static {
         data = new String[MAX - MIN][];
@@ -48,6 +46,10 @@ public class Pinyin implements Element {
 
         for (int i = 0; i < data.length; i++)
             if (data[i] == null) data[i] = EMPTY;
+
+        Stream.of('s', 'z', 'c', 'h').forEach(i -> SPECIAL.put(i,
+                new Phoneme(new String[]{Character.toString(i)})));
+        SPECIAL.put('f', new Phoneme(new String[]{"", "h"}));
     }
 
     private Phoneme[] phonemes;
@@ -55,8 +57,7 @@ public class Pinyin implements Element {
     public Pinyin(String str, PinIn p, int id) {
         raw = str;
         this.id = id;
-        this.context = p;
-        reload(str);
+        reload(str, p);
     }
 
     public Phoneme[] phonemes() {
@@ -72,12 +73,22 @@ public class Pinyin implements Element {
     }
 
     public IndexSet match(String str, int start, boolean partial) {
-        IndexSet ret = new IndexSet(0x1);
-        ret = phonemes[0].match(str, ret, start, partial);
-        if (duo) ret = phonemes[1].match(str, ret, start, partial);
-        else ret.merge(phonemes[1].match(str, ret, start, partial));
-        if (phonemes.length == 3) ret.merge(phonemes[2].match(str, ret, start, partial));
-        return ret;
+        if (duo) {
+            IndexSet ret = IndexSet.ZERO;
+            ret = phonemes[0].match(str, ret, start, partial);
+            ret = phonemes[1].match(str, ret, start, partial);
+            ret.merge(phonemes[2].match(str, ret, start, partial));
+            return ret;
+        } else {
+            IndexSet active = IndexSet.ZERO;
+            IndexSet ret = new IndexSet();
+            for (Phoneme phoneme : phonemes) {
+                active = phoneme.match(str, active, start, partial);
+                if (active.isEmpty()) break;
+                ret.merge(active);
+            }
+            return ret;
+        }
     }
 
     @Override
@@ -87,14 +98,21 @@ public class Pinyin implements Element {
         return ret.toString();
     }
 
-    public void reload(String str) {
+    public void reload(String str, PinIn p) {
+        String[] split = p.keyboard().split(str);
         List<Phoneme> l = new ArrayList<>();
-        for (String s : context.keyboard().split(str)) {
-            Phoneme ph = context.genPhoneme(s);
-            if (!ph.isEmpty()) l.add(ph);
+        for (String s : split) l.add(p.genPhoneme(s));
+        if (str.charAt(1) == 'h' && p.keyboard() == Keyboard.QUANPIN) {
+            char c = str.charAt(0);
+            l.set(0, SPECIAL.get(c));
+            boolean b = (c == 'z' && p.fZh2Z())
+                    || (c == 'c' && p.fCh2C())
+                    || (c == 's' && p.fSh2S());
+            l.add(1, SPECIAL.get(b ? 'f' : 'h'));
         }
         phonemes = l.toArray(new Phoneme[]{});
-        duo = context.keyboard().duo;
+
+        duo = p.keyboard().duo;
     }
 
     public String format(Format f) {

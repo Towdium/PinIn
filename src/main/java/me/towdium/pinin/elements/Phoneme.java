@@ -18,6 +18,10 @@ public class Phoneme implements Element {
         reload(str, p);
     }
 
+    Phoneme(String[] strs) {
+        this.strs = strs;
+    }
+
     public IndexSet match(String source, IndexSet idx, int start, boolean partial) {
         if (strs.length == 1 && strs[0].isEmpty()) return new IndexSet(idx);
         IndexSet ret = new IndexSet();

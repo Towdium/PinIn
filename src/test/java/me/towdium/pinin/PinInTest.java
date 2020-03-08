@@ -156,8 +156,8 @@ public class PinInTest {
         assert p.contains("测试文本", "ceshiwenben");
         assert p.contains("测试文本", "ceshiwenbe");
         assert p.contains("测试文本", "ceshiwben");
-        assert p.contains("测试文本", "ce4shi4w2ben");
-        assert !p.contains("测试文本", "ce2shi4w2ben");
+        assert p.contains("测试文本", "ce4shi4wb");
+        assert !p.contains("测试文本", "ce2shi4wb");
         assert p.contains("合金炉", "hejinlu");
         assert p.contains("洗矿场", "xikuangchang");
         assert p.contains("流体", "liuti");
@@ -172,7 +172,11 @@ public class PinInTest {
         assert p.contains("测试文本", "hk4g4jp61p3");
         assert p.contains("测试文本", "hkgjp1");
         assert p.contains("錫", "vu6");
+        assert p.contains("鑽石", "yj0");
         assert p.contains("物質", "j456");
+        assert p.contains("腳手架", "rul3g.3ru84");
+        assert p.contains("鵝", "k6");
+        assert p.contains("葉", "u,4");
     }
 
     @Test
@@ -217,9 +221,9 @@ public class PinInTest {
         assert s.size() == 1 && s.contains(1);
         s = tree.search("ceshiwben");
         assert s.size() == 1 && s.contains(1);
-        s = tree.search("ce4shi4w2ben");
+        s = tree.search("ce4shi4wb");
         assert s.size() == 1 && s.contains(1);
-        s = tree.search("ce2shi4w2ben");
+        s = tree.search("ce2shi4wb");
         assert s.size() == 0;
         s = tree.search("hejinlu");
         assert s.size() == 1 && s.contains(2);
@@ -244,19 +248,21 @@ public class PinInTest {
         tree.put("测试文本", 0);
         tree.put("测试文字", 3);
         Collection<Integer> s;
-        s = tree.search("ce4shi4w2ben");
+        s = tree.search("ce4shi4wb");
         assert s.size() == 1 && s.contains(0);
         s = tree.search("ce4shw");
         assert s.size() == 2;
         s = tree.search("ce4sw");
+        assert s.size() == 2;
+        s = tree.search("ce4siw");
         assert s.isEmpty();
         p.config().fSh2S(true).commit();
-        s = tree.search("ce4sw");
+        s = tree.search("ce4siw");
         assert s.size() == 2;
         p.config().fSh2S(false).keyboard(DAQIAN).commit();
         s = tree.search("hk4g4jp61p3");
         assert s.size() == 1;
-        s = tree.search("ce4shi4w2ben");
+        s = tree.search("ce4shi4wb");
         assert s.isEmpty();
     }
 

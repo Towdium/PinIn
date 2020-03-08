@@ -34,7 +34,6 @@ public class Accelerator {
     }
 
     public IndexSet get(Pinyin p, int offset) {
-        if (p.context != context) throw new IllegalArgumentException("Context mismatch");
         for (int i = cache.size(); i <= offset; i++)
             cache.add(new IndexSet.Storage());
         IndexSet.Storage data = cache.get(offset);

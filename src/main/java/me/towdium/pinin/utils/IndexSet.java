@@ -4,6 +4,7 @@ import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
 
 public class IndexSet {
+    public static final IndexSet ZERO = new IndexSet(0x1);
     public static final IndexSet ONE = new IndexSet(0x2);
     public static final IndexSet NONE = new IndexSet(0x0);
 
