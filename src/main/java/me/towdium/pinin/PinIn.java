@@ -1,14 +1,11 @@
 package me.towdium.pinin;
 
-import me.towdium.pinin.elements.Char;
-import me.towdium.pinin.elements.Chinese;
-import me.towdium.pinin.elements.Phoneme;
-import me.towdium.pinin.elements.Pinyin;
+import me.towdium.pinin.elements.*;
 import me.towdium.pinin.utils.Accelerator;
 import me.towdium.pinin.utils.Cache;
+import me.towdium.pinin.utils.IndexSet;
 
-import static me.towdium.pinin.elements.Chinese.MAX;
-import static me.towdium.pinin.elements.Chinese.MIN;
+import static me.towdium.pinin.elements.Chinese.*;
 
 @SuppressWarnings("unused")
 public class PinIn {
@@ -20,50 +17,47 @@ public class PinIn {
     private Chinese[] chars = new Chinese[MAX - MIN];
     private Accelerator acc;
 
-    private Keyboard keyboard;
+    private Keyboard keyboard = Keyboard.QUANPIN;
     private int modification = 0;
-    private boolean fZh2Z;
-    private boolean fSh2S;
-    private boolean fCh2C;
-    private boolean fAng2An;
-    private boolean fIng2In;
-    private boolean fEng2En;
-    private boolean fU2V;
+    private boolean fZh2Z = false;
+    private boolean fSh2S = false;
+    private boolean fCh2C = false;
+    private boolean fAng2An = false;
+    private boolean fIng2In = false;
+    private boolean fEng2En = false;
+    private boolean fU2V = false;
+    private boolean accelerate = false;
 
+    /**
+     * Use PinIn object to manage the context
+     * To configure it, use {@link #config()}
+     */
     public PinIn() {
-        this(Keyboard.QUANPIN, false, false, false,
-                false, false, false, false);
-    }
-
-    public PinIn(Keyboard keyboard, boolean fZh2Z, boolean fSh2S, boolean fCh2C,
-                 boolean fAng2An, boolean fIng2In, boolean fEng2En, boolean fU2V) {
-        this.keyboard = keyboard;
-        this.fZh2Z = fZh2Z;
-        this.fSh2S = fSh2S;
-        this.fCh2C = fCh2C;
-        this.fAng2An = fAng2An;
-        this.fIng2In = fIng2In;
-        this.fEng2En = fEng2En;
-        this.fU2V = fU2V;
         acc = new Accelerator(this);
     }
 
     public boolean contains(String s1, String s2) {
-        acc.setProvider(s1);
-        acc.search(s2);
-        return acc.contains(0, 0);
+        if (accelerate) {
+            acc.setProvider(s1);
+            acc.search(s2);
+            return acc.contains(0, 0);
+        } else return Matcher.contains(s1, s2, this);
     }
 
     public boolean begins(String s1, String s2) {
-        acc.setProvider(s1);
-        acc.search(s2);
-        return acc.begins(0, 0);
+        if (accelerate) {
+            acc.setProvider(s1);
+            acc.search(s2);
+            return acc.begins(0, 0);
+        } else return Matcher.begins(s1, s2, this);
     }
 
     public boolean matches(String s1, String s2) {
-        acc.setProvider(s1);
-        acc.search(s2);
-        return acc.matches(0, 0);
+        if (accelerate) {
+            acc.setProvider(s1);
+            acc.search(s2);
+            return acc.matches(0, 0);
+        } else return Matcher.matches(s1, s2, this);
     }
 
     public Phoneme genPhoneme(String s) {
@@ -122,6 +116,10 @@ public class PinIn {
         return fU2V;
     }
 
+    /**
+     * Set values in returned {@link Config} object,
+     * then use {@link Config#commit()} to apply
+     */
     public Config config() {
         return new Config();
     }
@@ -133,7 +131,7 @@ public class PinIn {
     private void config(Config c) {
         if (fAng2An == c.fAng2An && fEng2En == c.fEng2En && fIng2In == c.fIng2In
                 && fZh2Z == c.fZh2Z && fSh2S == c.fSh2S && fCh2C == c.fCh2C
-                && keyboard == c.keyboard && fU2V == c.fU2V) return;
+                && keyboard == c.keyboard && fU2V == c.fU2V && accelerate == c.accelerate) return;
 
         keyboard = c.keyboard;
         fZh2Z = c.fZh2Z;
@@ -143,9 +141,60 @@ public class PinIn {
         fIng2In = c.fIng2In;
         fEng2En = c.fEng2En;
         fU2V = c.fU2V;
+        accelerate = c.accelerate;
         cPhoneme.foreach((s, p) -> p.reload(s, this));
         cPinyin.foreach((s, p) -> p.reload(s, this));
         modification++;
+    }
+
+    public static class Matcher {
+        public static boolean begins(String s1, String s2, PinIn p) {
+            if (isChinese(s1)) return check(s1, 0, s2, 0, p, true);
+            else return s1.startsWith(s2);
+        }
+
+        public static boolean contains(String s1, String s2, PinIn p) {
+            if (isChinese(s1)) {
+                for (int i = 0; i < s1.length(); i++)
+                    if (check(s1, i, s2, 0, p, true)) return true;
+                return false;
+            } else return s1.contains(s2);
+        }
+
+        public static boolean matches(String s1, String s2, PinIn p) {
+            if (isChinese(s1)) return check(s1, 0, s2, 0, p, false);
+            else return s1.equals(s2);
+        }
+
+        private static boolean check(String s1, int start1, String s2, int start2, PinIn p, boolean partial) {
+            if (start2 == s2.length()) return partial || start1 == s1.length();
+
+            Element r = p.genChar(s1.charAt(start1));
+            IndexSet s = r.match(s2, start2, partial);
+
+            if (start1 == s1.length() - 1) {
+                int i = s2.length() - start2;
+                return s.get(i);
+            } else return !s.traverse(i -> !check(s1, start1 + 1, s2, start2 + i, p, partial));
+        }
+    }
+
+    public class Ticket {
+        int modification;
+        Runnable runnable;
+
+        private Ticket(Runnable r) {
+            runnable = r;
+            modification = PinIn.this.modification;
+        }
+
+        public void renew() {
+            int i = PinIn.this.modification;
+            if (modification != i) {
+                modification = i;
+                runnable.run();
+            }
+        }
     }
 
     public class Config {
@@ -157,6 +206,7 @@ public class PinIn {
         public boolean fIng2In;
         public boolean fEng2En;
         public boolean fU2V;
+        public boolean accelerate;
 
         private Config() {
             keyboard = PinIn.this.keyboard;
@@ -167,6 +217,7 @@ public class PinIn {
             fIng2In = PinIn.this.fIng2In;
             fEng2En = PinIn.this.fEng2En;
             fU2V = PinIn.this.fU2V;
+            accelerate = PinIn.this.accelerate;
         }
 
         public Config keyboard(Keyboard keyboard) {
@@ -209,27 +260,28 @@ public class PinIn {
             return this;
         }
 
+        /**
+         * Set accelerate mode of immediate matching.
+         * When working in accelerate mode, accelerator will be used.
+         * <p>
+         * When calling immediate matching functions continuously with
+         * different {@code s1} but same {@code s2}, for, say, 100 times,
+         * they are considered stable calls.
+         * If the scenario uses mainly stable calls and most of {@code s1}
+         * contains Chinese characters, using accelerate mode provides
+         * significant speed up. Otherwise, overhead of cache management
+         * in accelerator will slow down the matching process.
+         * Accelerate mode is disabled by default for consistency in
+         * different scenarios.
+         */
+        public Config accelerate(boolean accelerate) {
+            this.accelerate = accelerate;
+            return this;
+        }
+
         public PinIn commit() {
             PinIn.this.config(this);
             return PinIn.this;
-        }
-    }
-
-    public class Ticket {
-        int modification;
-        Runnable runnable;
-
-        private Ticket(Runnable r) {
-            runnable = r;
-            modification = PinIn.this.modification;
-        }
-
-        public void renew() {
-            int i = PinIn.this.modification;
-            if (modification != i) {
-                modification = i;
-                runnable.run();
-            }
         }
     }
 }

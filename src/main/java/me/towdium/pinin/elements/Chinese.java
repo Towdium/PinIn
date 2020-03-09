@@ -42,4 +42,10 @@ public class Chinese extends Char {
     public static boolean isChinese(char i) {
         return MIN <= i && i < MAX;
     }
+
+    public static boolean isChinese(CharSequence s) {
+        for (int i = s.length() - 1; i >= 0; i--)
+            if (isChinese(s.charAt(i))) return true;
+        return false;
+    }
 }
