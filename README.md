@@ -53,9 +53,12 @@ public static void main(String[] args) {
     // direct match
     boolean result1 = p.contains("测试文本", "ceshi");
     // indexed match
-    PinyinTree<Integer> tree = new PinyinTree<>(true, p);
+    Searcher<Integer> searcher = new TreeSearcher<>(CONTAIN, p));
     p.put("测试文本", 0);
-    boolean result2 = tree.search("ceshi").contains(0);
+    boolean result2 = searcher.search("ceshi").contains(0);
+    // fuzzy spelling
+    p.config().fSh2S(true).commit();
+    boolean result3 = p.contains("测试文本", "cesi");
     // pinyin format
     Char c = p.genChar('圆');
     Pinyin y = c.pinyins()[0];
