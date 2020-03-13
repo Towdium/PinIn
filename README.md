@@ -1,4 +1,4 @@
-# PinIn
+# PinIn [![Download][7]][8]
 
 一个用于解决各类汉语拼音匹配问题的 Java 库。对即时匹配提供基于 NFA 的实现，对索引匹配提供类后缀树的实现。除此之外，它还可以将汉字转换为拼音字符串，包括 ASCII，Unicode 和注音符号。
 
@@ -83,3 +83,5 @@ Hava fun!
 [4]: https://github.com/mozillazg/pinyin-data
 [5]: https://www.towdium.me/2019/11/05/pinyin-search-again-1/
 [6]: http://fastutil.di.unimi.it/
+[7]: https://api.bintray.com/packages/towdium/pinin/pinin/images/download.svg
+[8]: https://bintray.com/towdium/pinin/pinin
