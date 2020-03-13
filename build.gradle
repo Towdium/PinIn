@@ -1,5 +1,7 @@
 plugins {
     id 'com.github.johnrengelman.shadow' version '4.0.4'
+    id "com.jfrog.bintray" version "1.8.4"
+    id 'maven-publish'
     id 'java'
 }
 
@@ -8,6 +10,35 @@ repositories {
 }
 
 build.dependsOn shadowJar
+
+version= "1.2.0"
+group = "me.towdium.pinin"
+
+def strUrl = 'https://github.com/Towdium/PinIn'
+def strGit = 'git@github.com:Towdium/PinIn.git'
+def strDesc = 'Java library for Chinese text match using Pinyin'
+def strVer = version
+def strGroup = group
+
+def pomConfig = {
+    licenses {
+        license {
+            name "MIT License"
+            url "https://opensource.org/licenses/MIT"
+            distribution "repo"
+        }
+    }
+    developers {
+        developer {
+            id "towdium"
+            name "Juntong Liu"
+            email "towdium@gmail.com"
+        }
+    }
+    scm {
+        url strUrl
+    }
+}
 
 shadowJar {
     exclude 'it/unimi/dsi/fastutil/shorts/**'
@@ -53,4 +84,60 @@ dependencies {
     compile 'it.unimi.dsi:fastutil:8.3.0'
     testCompile 'org.junit.jupiter:junit-jupiter-api:5.4.0'
     testRuntime 'org.junit.jupiter:junit-jupiter-engine:5.4.0'
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    from sourceSets.main.allSource
+    classifier "source"
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    from javadoc.destinationDir
+    classifier "javadoc"
+}
+
+publishing {
+    publications {
+        Upload(MavenPublication) {
+            from components.java
+            groupId strGroup
+            artifact sourcesJar
+            artifact javadocJar
+            artifactId 'pinin'
+            version strVer
+            pom.withXml {
+                def root = asNode()
+                root.appendNode('description', strDesc)
+                root.appendNode('name', 'pinin')
+                root.appendNode('url', strUrl)
+                root.children().last() + pomConfig
+            }
+        }
+    }
+}
+
+artifacts {
+    archives javadocJar
+    archives sourcesJar
+}
+
+bintray {
+    publish = true
+    user = 'towdium'
+    key = project.findProperty("bintray.key")
+    pkg {
+        repo = 'pinin'
+        name = 'pinin'
+        userOrg = 'towdium'
+        licenses = ['MIT']
+        websiteUrl = strUrl
+        vcsUrl = strGit
+        version {
+            name = strVer
+            desc = strDesc
+            released  = new Date()
+            vcsTag = strVer
+        }
+    }
+    publications = ['Upload']
 }
