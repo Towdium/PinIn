@@ -1,6 +1,8 @@
 package me.towdium.pinin;
 
-import java.util.Map;
+import me.towdium.pinin.elements.Pinyin;
+
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -59,43 +61,53 @@ public class Keyboard {
 
     final Map<String, String> local;
     final Map<String, String> keys;
-    final Function<String, String[]> cutter;
+    final Function<String, Collection<String>> cutter;
     public final boolean duo;
 
     public Keyboard(Map<String, String> local, Map<String, String> keys,
-                    Function<String, String[]> cutter, boolean duo) {
+                    Function<String, Collection<String>> cutter, boolean duo) {
         this.local = local;
         this.keys = keys;
         this.cutter = cutter;
         this.duo = duo;
     }
 
-    public static String[] standard(String s) {
-        if (s.startsWith("a") || s.startsWith("e") || s.startsWith("i")
-                || s.startsWith("o") || s.startsWith("u")) {
-            return new String[]{s.substring(0, s.length() - 1), s.substring(s.length() - 1)};
-        } else {
-            int i = s.length() > 2 && s.charAt(1) == 'h' ? 2 : 1;
-            if (s.length() == i + 1) return new String[]{s.substring(0, i), s.substring(s.length() - 1)};
-            else return new String[]{s.substring(0, i), s.substring(i, s.length() - 1), s.substring(s.length() - 1)};
+    public static List<String> standard(String s) {
+        List<String> ret = new ArrayList<>();
+        int cursor = 0;
+
+        // initial
+        if (Pinyin.hasInitial(s)) {
+            cursor = s.length() > 2 && s.charAt(1) == 'h' ? 2 : 1;
+            ret.add(s.substring(0, cursor));
         }
+
+        // final
+        if (s.length() != cursor + 1) {
+            ret.add(s.substring(cursor, s.length() - 1));
+        }
+
+        // tone
+        ret.add(s.substring(s.length() - 1));
+
+        return  ret;
     }
 
     public String keys(String s) {
         return keys == null ? s : keys.getOrDefault(s, s);
     }
 
-    public static String[] zero(String s) {
-        String[] ss = standard(s);
-        if (ss.length != 3) {
-            String vowel = ss[0];
-            ss = new String[]{Character.toString(vowel.charAt(0)), ss[0], ss[0]};
-            if (vowel.length() == 2) ss[1] = Character.toString(vowel.charAt(1));
+    public static List<String> zero(String s) {
+        List<String> ss = standard(s);
+        if (ss.size() == 2) {
+            String finale = ss.get(0);
+            ss.set(0, Character.toString(finale.charAt(0)));
+            ss.add(1, finale.length() == 2 ? Character.toString(finale.charAt(1)) : finale);
         }
         return ss;
     }
 
-    public String[] split(String s) {
+    public Collection<String> split(String s) {
         if (local != null) {
             String cut = s.substring(0, s.length() - 1);
             String alt = local.get(cut);

@@ -1,5 +1,5 @@
 plugins {
-    id 'com.github.johnrengelman.shadow' version '4.0.4'
+    id 'com.github.johnrengelman.shadow' version '6.1.0'
     id "com.jfrog.bintray" version "1.8.4"
     id 'maven-publish'
     id 'java'
@@ -91,18 +91,12 @@ task sourcesJar(type: Jar, dependsOn: classes) {
     classifier "source"
 }
 
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    from javadoc.destinationDir
-    classifier "javadoc"
-}
-
 publishing {
     publications {
         Upload(MavenPublication) {
             from components.java
             groupId strGroup
             artifact sourcesJar
-            artifact javadocJar
             artifactId 'pinin'
             version strVer
             pom.withXml {
@@ -117,8 +111,13 @@ publishing {
 }
 
 artifacts {
-    archives javadocJar
+    //archives javadocJar
     archives sourcesJar
+}
+
+compileJava   {
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
 }
 
 bintray {

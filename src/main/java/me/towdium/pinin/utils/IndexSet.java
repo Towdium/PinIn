@@ -103,7 +103,7 @@ public class IndexSet {
 
         public void set(IndexSet is, int index) {
             if (index >= data.length) {
-                int size = index + 2;
+                int size = index;
                 size |= size >> 1;
                 size |= size >> 2;
                 size |= size >> 4;
@@ -116,7 +116,6 @@ public class IndexSet {
             data[index] = is.value + 1;
         }
 
-        // nullable
         public IndexSet get(int index) {
             if (index >= data.length) return null;
             int ret = data[index];

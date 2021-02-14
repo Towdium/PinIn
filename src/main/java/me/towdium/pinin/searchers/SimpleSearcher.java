@@ -1,6 +1,7 @@
-package me.towdium.pinin;
+package me.towdium.pinin.searchers;
 
 import it.unimi.dsi.fastutil.ints.IntList;
+import me.towdium.pinin.PinIn;
 import me.towdium.pinin.utils.Accelerator;
 import me.towdium.pinin.utils.Compressor;
 
@@ -20,14 +21,14 @@ public class SimpleSearcher<T> implements Searcher<T> {
         this.logic = logic;
         acc = new Accelerator(context);
         acc.setProvider(strs);
-        ticket = context.ticket(this::reset);
+        ticket = context.ticket(acc::reset);
     }
 
     @Override
     public void put(String name, T identifier) {
         strs.put(name);
         for (int i = 0; i < name.length(); i++)
-            context.genChar(name.charAt(i));
+            context.getChar(name.charAt(i));
         objs.add(identifier);
     }
 
@@ -46,9 +47,5 @@ public class SimpleSearcher<T> implements Searcher<T> {
     @Override
     public PinIn context() {
         return context;
-    }
-
-    protected void reset() {
-        acc.reset();
     }
 }

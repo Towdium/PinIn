@@ -1,5 +1,6 @@
-package me.towdium.pinin;
+package me.towdium.pinin.searchers;
 
+import me.towdium.pinin.PinIn;
 import me.towdium.pinin.utils.Accelerator;
 
 import java.util.List;

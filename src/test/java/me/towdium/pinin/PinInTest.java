@@ -2,30 +2,36 @@ package me.towdium.pinin;
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
-import me.towdium.pinin.Searcher.Logic;
+import me.towdium.pinin.searchers.Searcher;
+import me.towdium.pinin.searchers.Searcher.Logic;
 import me.towdium.pinin.elements.Char;
 import me.towdium.pinin.elements.Pinyin;
+import me.towdium.pinin.searchers.CachedSearcher;
+import me.towdium.pinin.searchers.SimpleSearcher;
+import me.towdium.pinin.searchers.TreeSearcher;
 import me.towdium.pinin.utils.Accelerator;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static me.towdium.pinin.Keyboard.*;
-import static me.towdium.pinin.Searcher.Logic.CONTAIN;
-import static me.towdium.pinin.Searcher.Logic.EQUAL;
+import static me.towdium.pinin.searchers.Searcher.Logic.CONTAIN;
+import static me.towdium.pinin.searchers.Searcher.Logic.EQUAL;
 
 public class PinInTest {
     @Test
-    @SuppressWarnings("unused")
-    public void performance() throws IOException, NoSuchFieldException, IllegalAccessException {
+    @SuppressWarnings({"unused", "MismatchedQueryAndUpdateOfCollection"})
+    public void performance() throws IOException {
         List<String> search = new ArrayList<>();
         search.add("boli");
         search.add("yangmao");
@@ -35,118 +41,101 @@ public class PinInTest {
         funcs.add(l -> new CachedSearcher<>(l, new PinIn()));
         funcs.add(l -> new SimpleSearcher<>(l, new PinIn()));
         String[] sources = new String[]{"small", "large"};
-        for (Function<Logic, Searcher<Integer>> i : funcs)
-            for (Logic j : Logic.values())
-                for (String k : sources) performance(j, k, search, i);
+
+        for (Logic j : Logic.values()) {
+            for (String k : sources) {
+                List<String> data = loadTestData(k);
+                boolean reduced = data.size() > 100000;
+                System.out.print("Logic: " + j.toString().toLowerCase() + ", source: " + k);
+
+                float contains = time(10, search, s -> {
+                    IntSet result = new IntOpenHashSet();
+                    for (int i = 0; i < data.size(); i++) {
+                        String l = data.get(i);
+                        if (j.raw(k, s)) result.add(i);
+                    }
+                });
+                System.out.print(", contains search: " + String.format("%.2f", contains));
+
+                PinIn p = new PinIn();
+                float traverse = time(2, search, s -> {
+                    IntSet result = new IntOpenHashSet();
+                    for (int i = 0; i < data.size(); i++) {
+                        String l = data.get(i);
+                        if (j.test(p, k, s)) result.add(i);
+                    }
+                });
+                System.out.println(", loop search: " + String.format("%.1f", traverse));
+
+                for (Function<Logic, Searcher<Integer>> i : funcs) {
+                    Searcher<Integer> searcher = i.apply(j);
+
+                    performance(j, data, search, i);
+                }
+            }
+        }
     }
 
-    private void performance(Logic logic, String source, List<String> search,
-                             Function<Logic, Searcher<Integer>> func) throws IOException, NoSuchFieldException, IllegalAccessException {
-        long start = System.currentTimeMillis();
-        Searcher<Integer> searcher = func.apply(logic);
-        System.out.print("Test performance, logic: " + logic.toString().toLowerCase() + ", source: " + source);
-        System.out.println(", searcher: " + searcher.getClass().getSimpleName());
-        List<String> strs = new ArrayList<>();
+    private float time(int repeat, Runnable exec) {
+        long time = System.currentTimeMillis();
+        for (int i = 0; i < repeat; i++) {
+            exec.run();
+        }
+        return (System.currentTimeMillis() - time) / (float) repeat;
+    }
 
-        BufferedReader br = new BufferedReader(new InputStreamReader(
-                PinInTest.class.getResourceAsStream(source + ".txt"), StandardCharsets.UTF_8));
+    private <T> float time(int repeat, Collection<T> objs, Consumer<T> consumer) {
+        long time = System.currentTimeMillis();
+        for (int j = 0; j < repeat; j++) {
+            for (T i: objs) {
+                consumer.accept(i);
+            }
+        }
+        return (System.currentTimeMillis() - time) / (float) repeat / objs.size();
+    }
+
+    private List<String> loadTestData(String source) throws IOException {
         String line;
+        List<String> data = new ArrayList<>();
+        InputStream is = PinInTest.class.getResourceAsStream(source + ".txt");
+        InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8);
+        BufferedReader br = new BufferedReader(isr);
         while ((line = br.readLine()) != null) {
             if (line.isEmpty()) continue;
-            strs.add(line);
+            data.add(line);
+        }
+        return data;
+    }
+
+    private void performance(Logic logic, List<String> texts, List<String> tokens,
+                             Function<Logic, Searcher<Integer>> func) {
+        long start = System.currentTimeMillis();
+        final Searcher<Integer> searcher = func.apply(logic);
+        for (int j = 0; j < texts.size(); j++) searcher.put(texts.get(j), j);
+        boolean reduced = texts.size() > 100000;
+        System.out.print("  " + searcher.getClass().getSimpleName());
+
+        float construct = time(reduced ? 2 : 10, () -> {
+            Searcher<Integer> temp = func.apply(logic);
+            for (int j = 0; j < texts.size(); j++) temp.put(texts.get(j), j);
+        });
+        System.out.print(": construction: " + String.format("%.1f", construct));
+
+        if (searcher instanceof CachedSearcher) {
+            float warm = time(reduced ? 10 : 100, tokens, s -> {
+                List<Integer> is = searcher.search(s);
+                ((CachedSearcher<Integer>) searcher).resetCache();
+            });
+            System.out.print(", warmup: " + String.format("%.1f", warm));
         }
 
-        int loop = source.equals("large") ? 2 : 10;
-        long time = System.currentTimeMillis();
-        for (int i = 0; i < loop; i++) {
-            searcher = func.apply(logic);
-            for (int j = 0; j < strs.size(); j++) searcher.put(strs.get(j), j);
-        }
-
-        float construct = (System.currentTimeMillis() - time) / (float) loop;
-
-        float warm = 0;
-        float acc = 0;
-        float traverse = 0;
-        float contains = 0;
-
-
-        for (String s : search) {
-            Field field;
-            if (searcher instanceof CachedSearcher) field = SimpleSearcher.class.getDeclaredField("acc");
-            else field = searcher.getClass().getDeclaredField("acc");
-            field.setAccessible(true);
-            List<Integer> is = null;
-            float t;
-            if (searcher instanceof CachedSearcher) {
-                time = System.currentTimeMillis();
-                loop = source.equals("large") ? 10 : 100;
-                for (int i = 0; i < loop; i++) {
-                    ((CachedSearcher<?>) searcher).reset();
-                    is = searcher.search(s);
-                }
-                t = (System.currentTimeMillis() - time) / (float) loop;
-                warm += t;
-                //System.out.println("Warm up time: " + t);
-            }
-
-            time = System.currentTimeMillis();
-            loop = 10000;
-            if (searcher instanceof SimpleSearcher) loop /= 100;
-            if (source.equals("large")) loop /= 10;
-            for (int i = 0; i < loop; i++) {
-                is = searcher.search(s);
-                Accelerator a = (Accelerator) field.get(searcher);
-                a.reset();
-            }
-            t = (System.currentTimeMillis() - time) / (float) loop;
-            acc += t;
-            //System.out.println("Accelerated search time: " + t);
-
-            //for (Integer i: is) System.out.println(strs.get(i));
-
-            field = PinIn.class.getDeclaredField("acc");
-            field.setAccessible(true);
-            time = System.currentTimeMillis();
-            PinIn p = new PinIn();
-            IntSet result = new IntOpenHashSet();
-            loop = 2;
-            for (int j = 0; j < loop; j++) {
-                for (int i = 0; i < strs.size(); i++) {
-                    String k = strs.get(i);
-                    if (logic.test(p, k, s)) result.add(i);
-                }
-                Accelerator a = (Accelerator) field.get(p);
-                a.reset();
-            }
-            t = (System.currentTimeMillis() - time) / (float) loop;
-            traverse += t;
-            //System.out.println("Loop search time: " + t);
-            assert is != null && result.containsAll(is) && is.containsAll(result);
-            //System.out.println("Total matches: " + is.size());
-
-            time = System.currentTimeMillis();
-            result = new IntOpenHashSet();
-            loop = 10;
-            for (int j = 0; j < loop; j++) {
-                for (int i = 0; i < strs.size(); i++) {
-                    String k = strs.get(i);
-                    if (logic.raw(k, s)) result.add(i);
-                }
-            }
-            t = (System.currentTimeMillis() - time) / (float) loop;
-            contains += t;
-            //System.out.println("Contains search time: " + t);
-        }
-        if (search.size() == 1) return;
-        System.out.print("Averaged ");
-
-        System.out.print("contains search: " + String.format("%.2f", contains / search.size()));
-        System.out.print(", loop search: " + String.format("%.1f", traverse / search.size()));
-        System.out.print(", construction: " + String.format("%.1f", construct));
-        if (searcher instanceof CachedSearcher)
-            System.out.print(", warm up: " + String.format("%.1f", warm / search.size()));
-        System.out.print(", accelerated: " + String.format("%.3f", acc / search.size()));
+        int loop = 1000;
+        if (searcher instanceof SimpleSearcher) loop /= 100;
+        if (reduced) loop /= 10;
+        float search = time(loop, tokens, (s) -> {
+            List<Integer> is = searcher.search(s);
+        });
+        System.out.print(", accelerated: " + String.format("%.3f", search));
         System.out.println(", total: " + (System.currentTimeMillis() - start));
     }
 
@@ -163,6 +152,7 @@ public class PinInTest {
         assert p.contains("流体", "liuti");
         assert p.contains("轰20", "hong2");
         assert p.contains("hong2", "hong2");
+        assert !p.begins("测", "ce4a");
         assert !p.begins("", "a");
     }
 
@@ -302,12 +292,12 @@ public class PinInTest {
     @Test
     public void format() {
         PinIn pi = new PinIn();
-        Char ch = pi.genChar('圆');
+        Char ch = pi.getChar('圆');
         Pinyin py = ch.pinyins()[0];
         assert py.format(Pinyin.Format.NUMBER).equals("yuan2");
         assert py.format(Pinyin.Format.RAW).equals("yuan");
         assert py.format(Pinyin.Format.UNICODE).equals("yuán");
         assert py.format(Pinyin.Format.PHONETIC).equals("ㄩㄢˊ");
-        assert pi.genPinyin("le0").format(Pinyin.Format.PHONETIC).equals("˙ㄌㄜ");
+        assert pi.getPinyin("le0").format(Pinyin.Format.PHONETIC).equals("˙ㄌㄜ");
     }
 }

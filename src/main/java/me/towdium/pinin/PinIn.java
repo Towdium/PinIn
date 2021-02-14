@@ -1,21 +1,21 @@
 package me.towdium.pinin;
 
+import it.unimi.dsi.fastutil.chars.Char2ObjectMap;
+import it.unimi.dsi.fastutil.chars.Char2ObjectOpenHashMap;
 import me.towdium.pinin.elements.*;
 import me.towdium.pinin.utils.Accelerator;
 import me.towdium.pinin.utils.Cache;
 import me.towdium.pinin.utils.IndexSet;
 
-import static me.towdium.pinin.elements.Chinese.*;
-
 @SuppressWarnings("unused")
 public class PinIn {
     private int total = 0;
 
-    private Cache<String, Phoneme> cPhoneme = new Cache<>(s -> new Phoneme(s, this));
-    private Cache<String, Pinyin> cPinyin = new Cache<>(s -> new Pinyin(s, this, total++));
-    private Cache<Character, Chinese> cChar = new Cache<>(c -> new Chinese(c, this));
-    private Chinese[] chars = new Chinese[MAX - MIN];
-    private Accelerator acc;
+    private final Cache<String, Phoneme> phonemes = new Cache<>(s -> new Phoneme(s, this));
+    private final Cache<String, Pinyin> pinyins = new Cache<>(s -> new Pinyin(s, this, total++));
+    private final Char2ObjectMap<Char> chars = new Char2ObjectOpenHashMap<>();
+    private final Char.Dummy temp = new Char.Dummy();
+    private final Accelerator acc;
 
     private Keyboard keyboard = Keyboard.QUANPIN;
     private int modification = 0;
@@ -33,7 +33,18 @@ public class PinIn {
      * To configure it, use {@link #config()}
      */
     public PinIn() {
+        this(new DictLoader.Default());
+    }
+
+    public PinIn(DictLoader loader) {
         acc = new Accelerator(this);
+        loader.load((c, ss) -> {
+            Pinyin[] pinyins = new Pinyin[ss.length];
+            for (int i = 0; i < ss.length; i++) {
+                pinyins[i] = getPinyin(ss[i]);
+            }
+            chars.put(c.charValue(), new Char(c, pinyins));
+        });
     }
 
     public boolean contains(String s1, String s2) {
@@ -60,28 +71,22 @@ public class PinIn {
         } else return Matcher.matches(s1, s2, this);
     }
 
-    public Phoneme genPhoneme(String s) {
-        return cPhoneme.get(s);
+    public Phoneme getPhoneme(String s) {
+        return phonemes.get(s);
     }
 
-    public Pinyin genPinyin(String s) {
-        return cPinyin.get(s);
+    public Pinyin getPinyin(String s) {
+        return pinyins.get(s);
     }
 
-    public Char genChar(char c) {
-        if (Chinese.isChinese(c)) {
-            Chinese ret = chars[c - MIN];
-            if (ret == null) {
-                ret = cChar.get(c);
-                chars[c - MIN] = ret;
-            }
+    public Char getChar(char c) {
+        Char ret = chars.get(c);
+        if (ret != null) {
             return ret;
-        } else return new Char(c);
-    }
-
-    public static void initialize() {
-        //noinspection ResultOfMethodCallIgnored
-        Pinyin.class.getClass();
+        } else {
+            temp.set(c);
+            return temp;
+        }
     }
 
     public Keyboard keyboard() {
@@ -142,34 +147,35 @@ public class PinIn {
         fEng2En = c.fEng2En;
         fU2V = c.fU2V;
         accelerate = c.accelerate;
-        cPhoneme.foreach((s, p) -> p.reload(s, this));
-        cPinyin.foreach((s, p) -> p.reload(s, this));
+        phonemes.foreach((s, p) -> p.reload(s, this));
+        pinyins.foreach((s, p) -> p.reload(s, this));
         modification++;
     }
 
     public static class Matcher {
         public static boolean begins(String s1, String s2, PinIn p) {
-            if (isChinese(s1)) return check(s1, 0, s2, 0, p, true);
-            else return s1.startsWith(s2);
+            if (s1.isEmpty()) return s1.startsWith(s2);
+            else return check(s1, 0, s2, 0, p, true);
         }
 
         public static boolean contains(String s1, String s2, PinIn p) {
-            if (isChinese(s1)) {
+            if (s1.isEmpty()) return s1.contains(s2);
+            else {
                 for (int i = 0; i < s1.length(); i++)
                     if (check(s1, i, s2, 0, p, true)) return true;
                 return false;
-            } else return s1.contains(s2);
+            }
         }
 
         public static boolean matches(String s1, String s2, PinIn p) {
-            if (isChinese(s1)) return check(s1, 0, s2, 0, p, false);
-            else return s1.equals(s2);
+            if (s1.isEmpty()) return s1.equals(s2);
+            else return check(s1, 0, s2, 0, p, false);
         }
 
         private static boolean check(String s1, int start1, String s2, int start2, PinIn p, boolean partial) {
             if (start2 == s2.length()) return partial || start1 == s1.length();
 
-            Element r = p.genChar(s1.charAt(start1));
+            Element r = p.getChar(s1.charAt(start1));
             IndexSet s = r.match(s2, start2, partial);
 
             if (start1 == s1.length() - 1) {

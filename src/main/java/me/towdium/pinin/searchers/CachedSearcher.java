@@ -1,55 +1,62 @@
-package me.towdium.pinin;
+package me.towdium.pinin.searchers;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import me.towdium.pinin.PinIn;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static me.towdium.pinin.Searcher.Logic.*;
+import static me.towdium.pinin.searchers.Searcher.Logic.*;
 
 public class CachedSearcher<T> extends SimpleSearcher<T> {
     IntList all = new IntArrayList();
     float scale;
-    int len = -1;
-    int total = 0;
+    int lenCached = 0;  // longest string with cached result
+    int maxCached = 0;  // maximum amount of cached results
+    int total = 0;  // total characters of all strings
 
     LinkedHashMap<String, IntList> cache = new LinkedHashMap<String, IntList>() {
         @Override
         protected boolean removeEldestEntry(Map.Entry eldest) {
-            return size() >= max();
+            return size() >= maxCached;
         }
     };
 
-    private int max() {
-        return (int) (scale * ((logic == CONTAIN ? 16f * total / all.size() : 16) + 16));
-    }
-
-    public CachedSearcher(Logic logic, PinIn context) {
+    public CachedSearcher(Searcher.Logic logic, PinIn context) {
         this(logic, context, 1);
     }
 
-    public CachedSearcher(Logic logic, PinIn context, float scale) {
+    public CachedSearcher(Searcher.Logic logic, PinIn context, float scale) {
         super(logic, context);
         this.scale = scale;
-
     }
 
+    @Override
     public void put(String name, T identifier) {
-        reset();
+        resetCache();
         for (int i = 0; i < name.length(); i++)
-            context.genChar(name.charAt(i));
+            context.getChar(name.charAt(i));
         total += name.length();
         all.add(all.size());
-        len = -1;
+        lenCached = 0;
+        maxCached = 0;
         super.put(name, identifier);
     }
 
+    @Override
     public List<T> search(String name) {
         ticket.renew();
-        if (len == -1) len = (int) Math.ceil(Math.log(max()) / Math.log(8));
+        if (all.isEmpty()) return new ArrayList<>();
+
+        if (maxCached == 0) {
+            float totalSearch = logic == CONTAIN ? total : all.size();
+            maxCached = (int) (scale * Math.ceil(2 * Math.log(totalSearch) / Math.log(2) + 16));
+        }
+        if (lenCached == 0) lenCached = (int) Math.ceil(Math.log(maxCached) / Math.log(8));
         return test(name).stream().map(i -> objs.get(i)).collect(Collectors.toList());
     }
 
@@ -57,8 +64,9 @@ public class CachedSearcher<T> extends SimpleSearcher<T> {
         IntList ret;
         if (name.isEmpty()) return all;
         else if ((ret = cache.get(name)) == null) {
-            Logic filter = logic == EQUAL ? BEGIN : logic;
-            if (name.length() > len) throw new RuntimeException("Unnecessary filter");
+            // TODO eject cache based on n-gram frequency
+            Searcher.Logic filter = logic == EQUAL ? BEGIN : logic;
+            if (name.length() > lenCached) throw new RuntimeException("Unnecessary filter");
             IntArrayList tmp = new IntArrayList();
             IntList is = filter(name.substring(0, name.length() - 1));
             acc.search(name);
@@ -75,8 +83,8 @@ public class CachedSearcher<T> extends SimpleSearcher<T> {
     }
 
     private IntList test(String name) {
-        IntList is = filter(name.substring(0, Math.min(name.length(), len)));
-        if (logic == EQUAL || name.length() > len) {
+        IntList is = filter(name.substring(0, Math.min(name.length(), lenCached)));
+        if (logic == EQUAL || name.length() > lenCached) {
             IntArrayList ret = new IntArrayList();
             acc.search(name);
             for (int i : is) if (logic.test(acc, 0, strs.offsets().getInt(i))) ret.add(i);
@@ -84,9 +92,7 @@ public class CachedSearcher<T> extends SimpleSearcher<T> {
         } else return is;
     }
 
-    @Override
-    protected void reset() {
-        super.reset();
+    public void resetCache() {
         cache.clear();
     }
 }

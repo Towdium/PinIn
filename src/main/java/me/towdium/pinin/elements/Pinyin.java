@@ -3,54 +3,19 @@ package me.towdium.pinin.elements;
 import me.towdium.pinin.Keyboard;
 import me.towdium.pinin.PinIn;
 import me.towdium.pinin.utils.IndexSet;
-import me.towdium.pinin.utils.Slice;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static me.towdium.pinin.elements.Chinese.MAX;
-import static me.towdium.pinin.elements.Chinese.MIN;
 
 /**
  * Author: Towdium
  * Date: 21/04/19
  */
 public class Pinyin implements Element {
-    private static String[][] data;
-    private static final String[] EMPTY = new String[0];
     boolean duo = false;
     public final int id;
     String raw;
-    private static Map<Character, Phoneme> SPECIAL = new HashMap<>();
-
-    static {
-        data = new String[MAX - MIN][];
-        String resourceName = "data.txt";
-        BufferedReader br = new BufferedReader(new InputStreamReader(
-                PinIn.class.getResourceAsStream(resourceName), StandardCharsets.UTF_8));
-        try {
-            String line;
-            while ((line = br.readLine()) != null) {
-                char ch = line.charAt(0);
-                String sounds = line.substring(3);
-                data[ch - MIN] = sounds.split(", ");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        for (int i = 0; i < data.length; i++)
-            if (data[i] == null) data[i] = EMPTY;
-
-        Stream.of('s', 'z', 'c', 'h').forEach(i -> SPECIAL.put(i,
-                new Phoneme(new String[]{Character.toString(i)})));
-        SPECIAL.put('f', new Phoneme(new String[]{"", "h"}));
-    }
 
     private Phoneme[] phonemes;
 
@@ -64,22 +29,19 @@ public class Pinyin implements Element {
         return phonemes;
     }
 
-    public static Pinyin[] get(char ch, PinIn p) {
-        String[] ss = data[(int) ch - MIN];
-        Pinyin[] ret = new Pinyin[ss.length];
-        for (int i = 0; i < ss.length; i++)
-            ret[i] = p.genPinyin(ss[i]);
-        return ret;
-    }
-
     public IndexSet match(String str, int start, boolean partial) {
         if (duo) {
+            // in shuangpin we require initial and final both present,
+            // the phoneme, which is tone here, is optional
             IndexSet ret = IndexSet.ZERO;
             ret = phonemes[0].match(str, ret, start, partial);
             ret = phonemes[1].match(str, ret, start, partial);
             ret.merge(phonemes[2].match(str, ret, start, partial));
             return ret;
         } else {
+            // in other keyboards, match of precedent phoneme
+            // is compulsory to match subsequent phonemes
+            // for example, zhong1, z+h+ong+1 cannot match zong or zh1
             IndexSet active = IndexSet.ZERO;
             IndexSet ret = new IndexSet();
             for (Phoneme phoneme : phonemes) {
@@ -99,16 +61,32 @@ public class Pinyin implements Element {
     }
 
     public void reload(String str, PinIn p) {
-        String[] split = p.keyboard().split(str);
+        Collection<String> split = p.keyboard().split(str);
         List<Phoneme> l = new ArrayList<>();
-        for (String s : split) l.add(p.genPhoneme(s));
+        for (String s : split) l.add(p.getPhoneme(s));
         if (str.charAt(1) == 'h' && p.keyboard() == Keyboard.QUANPIN) {
-            char c = str.charAt(0);
-            l.set(0, SPECIAL.get(c));
-            boolean b = (c == 'z' && p.fZh2Z())
-                    || (c == 'c' && p.fCh2C())
-                    || (c == 's' && p.fSh2S());
-            l.add(1, SPECIAL.get(b ? 'f' : 'h'));
+            // here we implement sequence matching in quanpin, with a dirty trick
+            // if initial is one of 'zh' 'sh' 'ch', and fuzzy is not on, we slice it
+            // the first is one if 'z' 's' 'c', and the second is 'h'
+            boolean slice;
+            char sequence = str.charAt(0);
+            switch (sequence) {
+                case 'z':
+                    slice = !p.fZh2Z();
+                    break;
+                case 'c':
+                    slice = !p.fCh2C();
+                    break;
+                case 's':
+                    slice = !p.fSh2S();
+                    break;
+                default:
+                    slice = false;
+            }
+            if (slice) {
+                l.set(0, p.getPhoneme(Character.toString(sequence)));
+                l.add(1, p.getPhoneme("h"));
+            }
         }
         phonemes = l.toArray(new Phoneme[]{});
 
@@ -119,12 +97,16 @@ public class Pinyin implements Element {
         return f.format(this);
     }
 
+    public static boolean hasInitial(String s) {
+        return Stream.of('a', 'e', 'i', 'o', 'u', 'v').noneMatch(i -> s.charAt(0) == i);
+    }
+
     public static abstract class Format {
-        private static final Set<Slice> OFFSET = Stream.of(new String[]{
+        // finals with tones on the second character
+        private static final Set<String> OFFSET = Stream.of(new String[]{
                 "ui", "iu", "uan", "uang", "ian", "iang", "ua",
                 "ie", "uo", "iong", "iao", "ve", "ia"
-        }).map(Slice::new).collect(Collectors.toSet());
-
+        }).collect(Collectors.toSet());
 
         private static final Map<Character, Character> NONE = Stream.of(new Character[][]{
                 {'a', 'a'}, {'o', 'o'}, {'e', 'e'}, {'i', 'i'}, {'u', 'u'}, {'v', 'ü'}
@@ -150,7 +132,7 @@ public class Pinyin implements Element {
                 Stream.of(NONE, FIRST, SECOND, THIRD, FOURTH)
                         .collect(Collectors.toList());
 
-        private static final Map<Slice, String> SYMBOLS = Stream.of(new String[][]{
+        private static final Map<String, String> SYMBOLS = Stream.of(new String[][]{
                 {"a", "ㄚ"}, {"o", "ㄛ"}, {"e", "ㄜ"}, {"er", "ㄦ"}, {"ai", "ㄞ"},
                 {"ei", "ㄟ"}, {"ao", "ㄠ"}, {"ou", "ㄡ"}, {"an", "ㄢ"}, {"en", "ㄣ"},
                 {"ang", "ㄤ"}, {"eng", "ㄥ"}, {"ong", "ㄨㄥ"}, {"i", "ㄧ"}, {"ia", "ㄧㄚ"},
@@ -165,16 +147,16 @@ public class Pinyin implements Element {
                 {"r", "ㄖ"}, {"z", "ㄗ"}, {"c", "ㄘ"}, {"s", "ㄙ"}, {"w", "ㄨ"},
                 {"y", "ㄧ"}, {"1", ""}, {"2", "ˊ"}, {"3", "ˇ"}, {"4", "ˋ"},
                 {"0", "˙"}, {"", ""}
-        }).collect(Collectors.toMap(d -> new Slice(d[0]), d -> d[1]));
+        }).collect(Collectors.toMap(d -> d[0], d -> d[1]));
 
-        private static final Map<Slice, String> LOCAL = Stream.of(new String[][]{
+        private static final Map<String, String> LOCAL = Stream.of(new String[][]{
                 {"yi", "i"}, {"you", "iu"}, {"yin", "in"}, {"ye", "ie"}, {"ying", "ing"},
                 {"wu", "u"}, {"wen", "un"}, {"yu", "v"}, {"yue", "ve"}, {"yuan", "van"},
                 {"yun", "vn"}, {"ju", "jv"}, {"jue", "jve"}, {"juan", "jvan"}, {"jun", "jvn"},
                 {"qu", "qv"}, {"que", "qve"}, {"quan", "qvan"}, {"qun", "qvn"}, {"xu", "xv"},
                 {"xue", "xve"}, {"xuan", "xvan"}, {"xun", "xvn"}, {"shi", "sh"}, {"si", "s"},
                 {"chi", "ch"}, {"ci", "c"}, {"zhi", "zh"}, {"zi", "z"}, {"ri", "r"}
-        }).collect(Collectors.toMap(d -> new Slice(d[0]), d -> d[1]));
+        }).collect(Collectors.toMap(d -> d[0], d -> d[1]));
 
         public static final Format RAW = new Format() {
             @Override
@@ -194,19 +176,18 @@ public class Pinyin implements Element {
             @Override
             public String format(Pinyin p) {
                 String s = p.raw;
-                String str = LOCAL.get(new Slice(s, 0, -1));
+                String str = LOCAL.get(s.substring(0, s.length() - 1));
                 if (str != null) s = str + s.charAt(s.length() - 1);
                 StringBuilder sb = new StringBuilder();
 
-                Slice[] split;
-                if (s.startsWith("a") || s.startsWith("e") || s.startsWith("i")
-                        || s.startsWith("o") || s.startsWith("u")) {
-                    split = new Slice[]{new Slice(""), new Slice(s, 0, -1), new Slice(s, -1)};
+                String[] split;
+                int len = s.length();
+                if (!hasInitial(s)) {
+                    split = new String[]{"", s.substring(0, len - 1), s.substring(len - 1)};
                 } else {
                     int i = s.length() > 2 && s.charAt(1) == 'h' ? 2 : 1;
-                    split = new Slice[]{new Slice(s, 0, i), new Slice(s, i, -1), new Slice(s, -1)};
+                    split = new String[]{s.substring(0, i), s.substring(i, len - 1), s.substring(len - 1)};
                 }
-                @SuppressWarnings("EqualsBetweenInconvertibleTypes")
                 boolean weak = split[2].equals("0");
                 if (weak) sb.append(SYMBOLS.get(split[2]));
                 sb.append(SYMBOLS.get(split[0]));
@@ -221,22 +202,22 @@ public class Pinyin implements Element {
             public String format(Pinyin p) {
                 StringBuilder sb = new StringBuilder();
                 String s = p.raw;
-                Slice vowel;
+                String finale;
+                int len = s.length();
 
-                if (s.startsWith("a") || s.startsWith("e") || s.startsWith("i")
-                        || s.startsWith("o") || s.startsWith("u")) {
-                    vowel = new Slice(s, 0, -1);
+                if (!hasInitial(s)) {
+                    finale = s.substring(0, len - 1);
                 } else {
                     int i = s.length() > 2 && s.charAt(1) == 'h' ? 2 : 1;
                     sb.append(s, 0, i);
-                    vowel = new Slice(s, i, -1);
+                    finale = s.substring(i, len - 1);
                 }
 
-                int offset = OFFSET.contains(vowel) ? 1 : 0;
-                if (offset == 1) vowel.append(sb, 0, 1);
+                int offset = OFFSET.contains(finale) ? 1 : 0;
+                if (offset == 1) sb.append(finale, 0, 1);
                 Map<Character, Character> group = TONES.get(s.charAt(s.length() - 1) - '0');
-                sb.append(group.get(vowel.charAt(offset)));
-                if (vowel.length() > offset + 1) vowel.append(sb, offset + 1, vowel.length());
+                sb.append(group.get(finale.charAt(offset)));
+                if (finale.length() > offset + 1) sb.append(finale, offset + 1, finale.length());
                 return sb.toString();
             }
         };

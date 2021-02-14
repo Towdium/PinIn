@@ -1,10 +1,11 @@
-package me.towdium.pinin;
+package me.towdium.pinin.searchers;
 
 import it.unimi.dsi.fastutil.chars.*;
 import it.unimi.dsi.fastutil.ints.*;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import me.towdium.pinin.elements.Chinese;
+import me.towdium.pinin.PinIn;
+import me.towdium.pinin.elements.Char;
 import me.towdium.pinin.elements.Phoneme;
 import me.towdium.pinin.elements.Pinyin;
 import me.towdium.pinin.utils.Accelerator;
@@ -16,7 +17,7 @@ import java.util.Map;
 import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
 
-import static me.towdium.pinin.Searcher.Logic.EQUAL;
+import static me.towdium.pinin.searchers.Searcher.Logic.EQUAL;
 
 /**
  * Author: Towdium
@@ -276,8 +277,8 @@ public class TreeSearcher<T> implements Searcher<T> {
         }
 
         private void index(TreeSearcher<T> p, char c) {
-            if (!Chinese.isChinese(c)) return;
-            for (Pinyin py : Pinyin.get(c, p.context)) {
+            Char ch = p.context.getChar(c);
+            for (Pinyin py : ch.pinyins()) {
                 index.compute(py.phonemes()[0], (j, cs) -> {
                     if (cs == null) return new CharArraySet();
                     else if (cs instanceof CharArraySet && cs.size() >= THRESHOLD && !cs.contains(c))

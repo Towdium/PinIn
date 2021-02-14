@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.HashSet;
 
 public class Phoneme implements Element {
+
     String[] strs;
 
     @Override
@@ -16,10 +17,6 @@ public class Phoneme implements Element {
 
     public Phoneme(String str, PinIn p) {
         reload(str, p);
-    }
-
-    Phoneme(String[] strs) {
-        this.strs = strs;
     }
 
     public IndexSet match(String source, IndexSet idx, int start, boolean partial) {
