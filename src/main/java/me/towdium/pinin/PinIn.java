@@ -13,7 +13,7 @@ public class PinIn {
 
     private final Cache<String, Phoneme> phonemes = new Cache<>(s -> new Phoneme(s, this));
     private final Cache<String, Pinyin> pinyins = new Cache<>(s -> new Pinyin(s, this, total++));
-    private final Char2ObjectMap<Char> chars = new Char2ObjectOpenHashMap<>();
+    private final Char[] chars = new Char[Character.MAX_VALUE];
     private final Char.Dummy temp = new Char.Dummy();
     private final Accelerator acc;
 
@@ -39,11 +39,15 @@ public class PinIn {
     public PinIn(DictLoader loader) {
         acc = new Accelerator(this);
         loader.load((c, ss) -> {
-            Pinyin[] pinyins = new Pinyin[ss.length];
-            for (int i = 0; i < ss.length; i++) {
-                pinyins[i] = getPinyin(ss[i]);
+            if (ss == null) {
+                chars[c] = null;
+            } else {
+                Pinyin[] pinyins = new Pinyin[ss.length];
+                for (int i = 0; i < ss.length; i++) {
+                    pinyins[i] = getPinyin(ss[i]);
+                }
+                chars[c] = new Char(c, pinyins);
             }
-            chars.put(c.charValue(), new Char(c, pinyins));
         });
     }
 
@@ -80,7 +84,7 @@ public class PinIn {
     }
 
     public Char getChar(char c) {
-        Char ret = chars.get(c);
+        Char ret = chars[c];
         if (ret != null) {
             return ret;
         } else {

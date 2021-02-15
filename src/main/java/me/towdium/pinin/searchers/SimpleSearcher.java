@@ -21,7 +21,7 @@ public class SimpleSearcher<T> implements Searcher<T> {
         this.logic = logic;
         acc = new Accelerator(context);
         acc.setProvider(strs);
-        ticket = context.ticket(acc::reset);
+        ticket = context.ticket(this::reset);
     }
 
     @Override
@@ -47,5 +47,9 @@ public class SimpleSearcher<T> implements Searcher<T> {
     @Override
     public PinIn context() {
         return context;
+    }
+
+    public void reset() {
+        acc.reset();
     }
 }

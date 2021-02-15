@@ -2,12 +2,11 @@ package me.towdium.pinin.searchers;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import me.towdium.pinin.PinIn;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static me.towdium.pinin.searchers.Searcher.Logic.*;
@@ -18,13 +17,9 @@ public class CachedSearcher<T> extends SimpleSearcher<T> {
     int lenCached = 0;  // longest string with cached result
     int maxCached = 0;  // maximum amount of cached results
     int total = 0;  // total characters of all strings
+    Stats<String> stats = new Stats<>();
 
-    LinkedHashMap<String, IntList> cache = new LinkedHashMap<String, IntList>() {
-        @Override
-        protected boolean removeEldestEntry(Map.Entry eldest) {
-            return size() >= maxCached;
-        }
-    };
+    Map<String, IntList> cache = new HashMap<>();
 
     public CachedSearcher(Searcher.Logic logic, PinIn context) {
         this(logic, context, 1);
@@ -37,7 +32,7 @@ public class CachedSearcher<T> extends SimpleSearcher<T> {
 
     @Override
     public void put(String name, T identifier) {
-        resetCache();
+        reset();
         for (int i = 0; i < name.length(); i++)
             context.getChar(name.charAt(i));
         total += name.length();
@@ -60,25 +55,46 @@ public class CachedSearcher<T> extends SimpleSearcher<T> {
         return test(name).stream().map(i -> objs.get(i)).collect(Collectors.toList());
     }
 
+    @Override
+    public void reset() {
+        super.reset();
+        stats.reset();
+        lenCached = 0;
+        maxCached = 0;
+    }
+
     private IntList filter(String name) {
         IntList ret;
         if (name.isEmpty()) return all;
-        else if ((ret = cache.get(name)) == null) {
-            // TODO eject cache based on n-gram frequency
-            Searcher.Logic filter = logic == EQUAL ? BEGIN : logic;
-            if (name.length() > lenCached) throw new RuntimeException("Unnecessary filter");
-            IntArrayList tmp = new IntArrayList();
-            IntList is = filter(name.substring(0, name.length() - 1));
+
+        ret = cache.get(name);
+        stats.count(name);
+
+        if (ret == null) {
+            IntList base = filter(name.substring(0, name.length() - 1));
+            if (cache.size() >= maxCached) {
+                String least = stats.least(cache.keySet(), name);
+                if (!least.equals(name)) cache.remove(least);
+                else return base;
+            }
+
             acc.search(name);
-            for (int i : is) if (filter.test(acc, 0, strs.offsets().getInt(i))) tmp.add(i);
-            if (tmp.size() == is.size()) ret = is;
-            else {
+            IntArrayList tmp = new IntArrayList();
+            Searcher.Logic filter = logic == EQUAL ? BEGIN : logic;
+            for (int i : base) {
+                if (filter.test(acc, 0, strs.offsets().getInt(i))) tmp.add(i);
+            }
+
+            if (tmp.size() == base.size()) {
+                ret = base;
+            } else {
                 tmp.trim();
                 ret = tmp;
             }
+
+            cache.put(name, ret);
         }
-        cache.remove(name);
-        cache.put(name, ret);
+
         return ret;
     }
 
@@ -92,7 +108,32 @@ public class CachedSearcher<T> extends SimpleSearcher<T> {
         } else return is;
     }
 
-    public void resetCache() {
-        cache.clear();
+     static class Stats<T> {
+        Object2IntMap<T> data = new Object2IntOpenHashMap<>();
+
+        public void count(T key) {
+            int cnt = data.getInt(key) + 1;
+            data.put(key, cnt);
+            if (cnt == Integer.MAX_VALUE) {
+                data.forEach((k, v) -> data.put(k, v / 2));
+            }
+        }
+
+        public T least(Collection<T> keys, T extra) {
+            T ret = extra;
+            int cnt = data.getInt(extra);
+            for (T i: keys) {
+                int value = data.getInt(i);
+                if (value < cnt) {
+                    ret = i;
+                    cnt = value;
+                }
+            }
+            return ret;
+        }
+
+        public void reset() {
+            data.clear();
+        }
     }
 }

@@ -1,16 +1,19 @@
 package me.towdium.pinin.utils;
 
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import me.towdium.pinin.PinIn;
 import me.towdium.pinin.elements.Char;
 import me.towdium.pinin.elements.Pinyin;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Accelerator {
     final PinIn context;
     List<IndexSet.Storage> cache;
-    String search;
+    char[] searchChars;
+    String searchStr;
     Provider provider;
     Str str = new Str();
     boolean partial;
@@ -20,15 +23,18 @@ public class Accelerator {
     }
 
     public void search(String s) {
-        if (!s.equals(search)) {
-            search = s;
+        if (!s.equals(searchStr)) {
+            // here we store both search token as string and char array
+            // it seems stupid, but saves over 10% of accelerator overhead
+            searchStr = s;
+            searchChars = s.toCharArray();
             reset();
         }
     }
 
     public IndexSet get(char ch, int offset) {
         Char c = context.getChar(ch);
-        IndexSet ret = (search.charAt(offset) == c.get() ? IndexSet.ONE : IndexSet.NONE).copy();
+        IndexSet ret = (searchChars[offset] == c.get() ? IndexSet.ONE : IndexSet.NONE).copy();
         for (Pinyin p : c.pinyins()) ret.merge(get(p, offset));
         return ret;
     }
@@ -39,7 +45,7 @@ public class Accelerator {
         IndexSet.Storage data = cache.get(offset);
         IndexSet ret = data.get(p.id);
         if (ret == null) {
-            ret = p.match(search, offset, partial);
+            ret = p.match(searchStr, offset, partial);
             data.set(ret, p.id);
         }
         return ret;
@@ -55,19 +61,19 @@ public class Accelerator {
     }
 
     public void reset() {
-        cache = new ArrayList<>();
+        cache = new ObjectArrayList<>();
     }
 
     // offset - offset in search string
     // start - start point in raw text
     public boolean check(int offset, int start) {
-        if (offset == search.length()) return partial || provider.end(start);
+        if (offset == searchStr.length()) return partial || provider.end(start);
         if (provider.end(start)) return false;
 
         IndexSet s = get(provider.get(start), offset);
 
         if (provider.end(start + 1)) {
-            int i = search.length() - offset;
+            int i = searchStr.length() - offset;
             return s.get(i);
         } else return !s.traverse(i -> !check(offset + i, start + 1));
     }
@@ -100,7 +106,7 @@ public class Accelerator {
     }
 
     public String search() {
-        return search;
+        return searchStr;
     }
 
     public int common(int s1, int s2, int max) {

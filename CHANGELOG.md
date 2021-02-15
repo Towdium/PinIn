@@ -16,5 +16,5 @@ Changed some APIs
 ### 1.3.0
 
 Added support for customized dictionary loading  
-Improved `CachedSearcher` math model for massive data
+Improved `CachedSearcher` math model for massive data  
 Fixed incorrect spelling in Phonetic keyboard starting with `v`

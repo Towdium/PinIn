@@ -1,5 +1,7 @@
 package me.towdium.pinin;
 
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import me.towdium.pinin.searchers.Searcher;
@@ -21,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -48,28 +51,26 @@ public class PinInTest {
                 boolean reduced = data.size() > 100000;
                 System.out.print("Logic: " + j.toString().toLowerCase() + ", source: " + k);
 
-                float contains = time(10, search, s -> {
+                float contains = time(reduced ? 10 : 100, search, s -> {
                     IntSet result = new IntOpenHashSet();
                     for (int i = 0; i < data.size(); i++) {
-                        String l = data.get(i);
-                        if (j.raw(k, s)) result.add(i);
+                        String in = data.get(i);
+                        if (j.raw(in, s)) result.add(i);
                     }
                 });
                 System.out.print(", contains search: " + String.format("%.2f", contains));
 
                 PinIn p = new PinIn();
-                float traverse = time(2, search, s -> {
+                float traverse = time(reduced ? 10 : 100, search, s -> {
                     IntSet result = new IntOpenHashSet();
                     for (int i = 0; i < data.size(); i++) {
-                        String l = data.get(i);
-                        if (j.test(p, k, s)) result.add(i);
+                        String in = data.get(i);
+                        if (j.test(p, in, s)) result.add(i);
                     }
                 });
                 System.out.println(", loop search: " + String.format("%.1f", traverse));
 
                 for (Function<Logic, Searcher<Integer>> i : funcs) {
-                    Searcher<Integer> searcher = i.apply(j);
-
                     performance(j, data, search, i);
                 }
             }
@@ -115,7 +116,9 @@ public class PinInTest {
         boolean reduced = texts.size() > 100000;
         System.out.print("  " + searcher.getClass().getSimpleName());
 
-        float construct = time(reduced ? 2 : 10, () -> {
+        int loop = reduced ? 10 : 100;
+        if (searcher instanceof TreeSearcher) loop /= 5;
+        float construct = time(loop, () -> {
             Searcher<Integer> temp = func.apply(logic);
             for (int j = 0; j < texts.size(); j++) temp.put(texts.get(j), j);
         });
@@ -124,14 +127,13 @@ public class PinInTest {
         if (searcher instanceof CachedSearcher) {
             float warm = time(reduced ? 10 : 100, tokens, s -> {
                 List<Integer> is = searcher.search(s);
-                ((CachedSearcher<Integer>) searcher).resetCache();
+                ((CachedSearcher<Integer>) searcher).reset();
             });
             System.out.print(", warmup: " + String.format("%.1f", warm));
         }
 
-        int loop = 1000;
+        loop = reduced ? 1000 : 10000;
         if (searcher instanceof SimpleSearcher) loop /= 100;
-        if (reduced) loop /= 10;
         float search = time(loop, tokens, (s) -> {
             List<Integer> is = searcher.search(s);
         });
@@ -299,5 +301,26 @@ public class PinInTest {
         assert py.format(Pinyin.Format.UNICODE).equals("yuán");
         assert py.format(Pinyin.Format.PHONETIC).equals("ㄩㄢˊ");
         assert pi.getPinyin("le0").format(Pinyin.Format.PHONETIC).equals("˙ㄌㄜ");
+    }
+
+    @Test
+    public void dict() {
+        PinIn p = new PinIn();
+        TreeSearcher<Integer> searcher = new TreeSearcher<>(CONTAIN, p);
+        searcher.put("\uE900锭", 0);
+        assert !searcher.search("lu2d").contains(0);
+        assert !p.contains("\uE900", "lu2");
+
+        p = new PinIn(new DictLoader.Default(){
+            @Override
+            public void load(BiConsumer<Character, String[]> feed) {
+                super.load(feed);
+                feed.accept('\uE900', new String[]{"lu2"});
+            }
+        });
+        searcher = new TreeSearcher<>(CONTAIN, p);
+        searcher.put("\uE900锭", 0);
+        assert searcher.search("lu2d").contains(0);
+        assert p.contains("\uE900", "lu2");
     }
 }
