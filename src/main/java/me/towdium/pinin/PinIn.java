@@ -1,8 +1,9 @@
 package me.towdium.pinin;
 
-import it.unimi.dsi.fastutil.chars.Char2ObjectMap;
-import it.unimi.dsi.fastutil.chars.Char2ObjectOpenHashMap;
-import me.towdium.pinin.elements.*;
+import me.towdium.pinin.elements.Char;
+import me.towdium.pinin.elements.Element;
+import me.towdium.pinin.elements.Phoneme;
+import me.towdium.pinin.elements.Pinyin;
 import me.towdium.pinin.utils.Accelerator;
 import me.towdium.pinin.utils.Cache;
 import me.towdium.pinin.utils.IndexSet;

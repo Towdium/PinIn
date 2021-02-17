@@ -1,24 +1,20 @@
 package me.towdium.pinin;
 
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
-import me.towdium.pinin.searchers.Searcher;
-import me.towdium.pinin.searchers.Searcher.Logic;
 import me.towdium.pinin.elements.Char;
 import me.towdium.pinin.elements.Pinyin;
 import me.towdium.pinin.searchers.CachedSearcher;
+import me.towdium.pinin.searchers.Searcher;
+import me.towdium.pinin.searchers.Searcher.Logic;
 import me.towdium.pinin.searchers.SimpleSearcher;
 import me.towdium.pinin.searchers.TreeSearcher;
-import me.towdium.pinin.utils.Accelerator;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;

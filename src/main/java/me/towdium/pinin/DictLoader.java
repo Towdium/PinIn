@@ -1,8 +1,5 @@
 package me.towdium.pinin;
 
-import me.towdium.pinin.elements.Char;
-import me.towdium.pinin.elements.Pinyin;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,7 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.function.BiConsumer;
 
 @FunctionalInterface
-interface DictLoader {
+public interface DictLoader {
     void load(BiConsumer<Character, String[]> feed);
 
     class Default implements DictLoader {

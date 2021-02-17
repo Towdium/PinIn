@@ -5,8 +5,6 @@ import me.towdium.pinin.PinIn;
 import me.towdium.pinin.elements.Char;
 import me.towdium.pinin.elements.Pinyin;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class Accelerator {
