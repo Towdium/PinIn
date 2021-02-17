@@ -120,7 +120,7 @@ compileJava   {
 }
 
 bintray {
-    publish = true
+    publish = false
     user = 'towdium'
     key = project.findProperty("bintray.key")
     pkg {
