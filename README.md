@@ -63,27 +63,27 @@ dependencies {
 
 ```java
 public static void main(String[]args){
-        // context
-        PinIn p=new PinIn();
+    // context
+    PinIn p=new PinIn();
 
-        // direct match
-        boolean result1=p.contains("测试文本","ceshi");
+    // direct match
+    boolean result1=p.contains("测试文本","ceshi");
 
-        // indexed match
-        Searcher<Integer> searcher=new TreeSearcher<>(CONTAIN,p));
-        p.put("测试文本",0);
-        boolean result2=searcher.search("ceshi").contains(0);
+    // indexed match
+    Searcher<Integer> searcher=new TreeSearcher<>(CONTAIN,p));
+    p.put("测试文本",0);
+    boolean result2=searcher.search("ceshi").contains(0);
 
-        // fuzzy spelling
-        p.config().fSh2S(true).commit();  // don't forget to commit config
-        boolean result3=p.contains("测试文本","cesi");
+    // fuzzy spelling
+    p.config().fSh2S(true).commit();  // don't forget to commit config
+    boolean result3=p.contains("测试文本","cesi");
 
-        // pinyin format
-        Char c=p.genChar('圆');
-        Pinyin y=c.pinyins()[0];
-        String s1=y.format(UNICODE)  // yuán
-        String s2=y.format(PHONETIC)  // ㄩㄢˊ
-        }
+    // pinyin format
+    Char c=p.genChar('圆');
+    Pinyin y=c.pinyins()[0];
+    String s1=y.format(UNICODE)  // yuán
+    String s2=y.format(PHONETIC)  // ㄩㄢˊ
+}
 ```
 
 ## 致谢
