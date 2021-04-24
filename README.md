@@ -95,17 +95,10 @@ public static void main(String[]args){
 Hava fun!
 
 [1]: /src/test/resources/me/towdium/pinin/small.txt
-
 [2]: /src/test/java/me/towdium/pinin/PinInTest.java
-
 [3]: https://github.com/rime/rime-terra-pinyin
-
 [4]: https://github.com/mozillazg/pinyin-data
-
 [5]: https://www.towdium.me/2019/11/05/pinyin-search-again-1/
-
 [6]: http://fastutil.di.unimi.it/
-
-[7]: https://img.shields.io/jitpack/v/github/towdium/pinin
-
+[7]: https://jitpack.io/v/Towdium/PinIn.svg
 [8]: https://jitpack.io/#Towdium/PinIn
