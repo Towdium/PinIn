@@ -1,7 +1,5 @@
 plugins {
     id 'com.github.johnrengelman.shadow' version '6.1.0'
-    id "com.jfrog.bintray" version "1.8.4"
-    id 'maven-publish'
     id 'java'
 }
 
@@ -11,34 +9,8 @@ repositories {
 
 build.dependsOn shadowJar
 
-version= "1.3.1"
+version= "1.4.0"
 group = "me.towdium.pinin"
-
-def strUrl = 'https://github.com/Towdium/PinIn'
-def strGit = 'git@github.com:Towdium/PinIn.git'
-def strDesc = 'Java library for Chinese text match using Pinyin'
-def strVer = version
-def strGroup = group
-
-def pomConfig = {
-    licenses {
-        license {
-            name "MIT License"
-            url "https://opensource.org/licenses/MIT"
-            distribution "repo"
-        }
-    }
-    developers {
-        developer {
-            id "towdium"
-            name "Juntong Liu"
-            email "towdium@gmail.com"
-        }
-    }
-    scm {
-        url strUrl
-    }
-}
 
 shadowJar {
     exclude 'it/unimi/dsi/fastutil/shorts/**'
@@ -86,56 +58,7 @@ dependencies {
     testRuntime 'org.junit.jupiter:junit-jupiter-engine:5.4.0'
 }
 
-task sourcesJar(type: Jar, dependsOn: classes) {
-    from sourceSets.main.allSource
-    classifier "source"
-}
-
-publishing {
-    publications {
-        Upload(MavenPublication) {
-            from components.java
-            groupId strGroup
-            artifact sourcesJar
-            artifactId 'pinin'
-            version strVer
-            pom.withXml {
-                def root = asNode()
-                root.appendNode('description', strDesc)
-                root.appendNode('name', 'pinin')
-                root.appendNode('url', strUrl)
-                root.children().last() + pomConfig
-            }
-        }
-    }
-}
-
-artifacts {
-    archives sourcesJar
-}
-
 compileJava   {
     sourceCompatibility = '1.8'
     targetCompatibility = '1.8'
-}
-
-bintray {
-    publish = false
-    user = 'towdium'
-    key = project.findProperty("bintray.key")
-    pkg {
-        repo = 'pinin'
-        name = 'pinin'
-        userOrg = 'towdium'
-        licenses = ['MIT']
-        websiteUrl = strUrl
-        vcsUrl = strGit
-        version {
-            name = strVer
-            desc = strDesc
-            released  = new Date()
-            vcsTag = strVer
-        }
-    }
-    publications = ['Upload']
 }

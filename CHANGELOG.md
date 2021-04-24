@@ -22,3 +22,7 @@ Fixed incorrect spelling in Phonetic keyboard starting with `v`
 ### 1.3.1
 
 Fixed `DictLoader` accessibility issue
+
+### 1.4.0
+
+Changed format API for simplified usage

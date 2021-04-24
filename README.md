@@ -42,32 +42,49 @@ __前缀匹配__
 | 遍历 startsWith | N/A | N/A | 0.53ms | N/A |
 
 > `CachedSearcher` 的内存使用和搜索速度在不同场景下可能会有明显波动，一般介于 `TreeSearcher` 和 `SimpleSearcher` 之间。
- 
+
 对于 `TreeSearcher` 和 `CachedSearcher`，一些常量参数可以进一步调整，从而在速度与内存消耗间取得平衡。
- 
+
 ## 示例
 
-```java
-public static void main(String[] args) {
-    PinIn p = new PinIn();  // context
-    // direct match
-    boolean result1 = p.contains("测试文本", "ceshi");
-    // indexed match
-    Searcher<Integer> searcher = new TreeSearcher<>(CONTAIN, p));
-    p.put("测试文本", 0);
-    boolean result2 = searcher.search("ceshi").contains(0);
-    // fuzzy spelling
-    p.config().fSh2S(true).commit();
-    boolean result3 = p.contains("测试文本", "cesi");
-    // pinyin format
-    Char c = p.genChar('圆');
-    Pinyin y = c.pinyins()[0];
-    String s1 = y.format(UNICODE)  // yuán
-    String s2 = y.format(PHONETIC)  // ㄩㄢˊ
+你可以轻松得使用 [JitPack][8] 将 PinIn 导入到你的 Gradle 项目中。
+
+```groovy
+repositories {
+  maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+  implementation 'com.github.Towdium:PinIn:Version'
 }
 ```
 
-更多示例参见 [测试代码][2]。
+下面的代码展示了 PinIn 的一些基础接口的使用方式。更多示例参见 [测试代码][2]。
+
+```java
+public static void main(String[]args){
+        // context
+        PinIn p=new PinIn();
+
+        // direct match
+        boolean result1=p.contains("测试文本","ceshi");
+
+        // indexed match
+        Searcher<Integer> searcher=new TreeSearcher<>(CONTAIN,p));
+        p.put("测试文本",0);
+        boolean result2=searcher.search("ceshi").contains(0);
+
+        // fuzzy spelling
+        p.config().fSh2S(true).commit();  // don't forget to commit config
+        boolean result3=p.contains("测试文本","cesi");
+
+        // pinyin format
+        Char c=p.genChar('圆');
+        Pinyin y=c.pinyins()[0];
+        String s1=y.format(UNICODE)  // yuán
+        String s2=y.format(PHONETIC)  // ㄩㄢˊ
+        }
+```
 
 ## 致谢
 
@@ -78,10 +95,17 @@ public static void main(String[] args) {
 Hava fun!
 
 [1]: /src/test/resources/me/towdium/pinin/small.txt
+
 [2]: /src/test/java/me/towdium/pinin/PinInTest.java
+
 [3]: https://github.com/rime/rime-terra-pinyin
+
 [4]: https://github.com/mozillazg/pinyin-data
+
 [5]: https://www.towdium.me/2019/11/05/pinyin-search-again-1/
+
 [6]: http://fastutil.di.unimi.it/
-[7]: https://api.bintray.com/packages/towdium/pinin/pinin/images/download.svg
-[8]: https://bintray.com/towdium/pinin/pinin
+
+[7]: https://img.shields.io/jitpack/v/github/towdium/pinin
+
+[8]: https://jitpack.io/#Towdium/PinIn

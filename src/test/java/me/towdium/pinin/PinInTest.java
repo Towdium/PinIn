@@ -9,6 +9,7 @@ import me.towdium.pinin.searchers.Searcher;
 import me.towdium.pinin.searchers.Searcher.Logic;
 import me.towdium.pinin.searchers.SimpleSearcher;
 import me.towdium.pinin.searchers.TreeSearcher;
+import me.towdium.pinin.utils.PinyinFormat;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
@@ -165,6 +166,7 @@ public class PinInTest {
         assert p.contains("腳手架", "rul3g.3ru84");
         assert p.contains("鵝", "k6");
         assert p.contains("葉", "u,4");
+        assert p.contains("共同", "ej/wj/");
     }
 
     @Test
@@ -292,11 +294,12 @@ public class PinInTest {
         PinIn pi = new PinIn();
         Char ch = pi.getChar('圆');
         Pinyin py = ch.pinyins()[0];
-        assert py.format(Pinyin.Format.NUMBER).equals("yuan2");
-        assert py.format(Pinyin.Format.RAW).equals("yuan");
-        assert py.format(Pinyin.Format.UNICODE).equals("yuán");
-        assert py.format(Pinyin.Format.PHONETIC).equals("ㄩㄢˊ");
-        assert pi.getPinyin("le0").format(Pinyin.Format.PHONETIC).equals("˙ㄌㄜ");
+        assert PinyinFormat.NUMBER.format(py).equals("yuan2");
+        assert PinyinFormat.RAW.format(py).equals("yuan");
+        assert PinyinFormat.UNICODE.format(py).equals("yuán");
+        assert PinyinFormat.PHONETIC.format(py).equals("ㄩㄢˊ");
+        pi.config().format(PinyinFormat.PHONETIC).commit();
+        assert pi.format(pi.getPinyin("le0")).equals("˙ㄌㄜ");
     }
 
     @Test

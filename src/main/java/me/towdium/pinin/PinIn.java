@@ -7,6 +7,7 @@ import me.towdium.pinin.elements.Pinyin;
 import me.towdium.pinin.utils.Accelerator;
 import me.towdium.pinin.utils.Cache;
 import me.towdium.pinin.utils.IndexSet;
+import me.towdium.pinin.utils.PinyinFormat;
 
 @SuppressWarnings("unused")
 public class PinIn {
@@ -28,6 +29,7 @@ public class PinIn {
     private boolean fEng2En = false;
     private boolean fU2V = false;
     private boolean accelerate = false;
+    private PinyinFormat format = PinyinFormat.NUMBER;
 
     /**
      * Use PinIn object to manage the context
@@ -126,6 +128,14 @@ public class PinIn {
         return fU2V;
     }
 
+    public PinyinFormat format() {
+        return format;
+    }
+
+    public String format(Pinyin p) {
+        return format.format(p);
+    }
+
     /**
      * Set values in returned {@link Config} object,
      * then use {@link Config#commit()} to apply
@@ -139,6 +149,8 @@ public class PinIn {
     }
 
     private void config(Config c) {
+        format = c.format;
+
         if (fAng2An == c.fAng2An && fEng2En == c.fEng2En && fIng2In == c.fIng2In
                 && fZh2Z == c.fZh2Z && fSh2S == c.fSh2S && fCh2C == c.fCh2C
                 && keyboard == c.keyboard && fU2V == c.fU2V && accelerate == c.accelerate) return;
@@ -218,6 +230,7 @@ public class PinIn {
         public boolean fEng2En;
         public boolean fU2V;
         public boolean accelerate;
+        public PinyinFormat format;
 
         private Config() {
             keyboard = PinIn.this.keyboard;
@@ -229,6 +242,7 @@ public class PinIn {
             fEng2En = PinIn.this.fEng2En;
             fU2V = PinIn.this.fU2V;
             accelerate = PinIn.this.accelerate;
+            format = PinyinFormat.NUMBER;
         }
 
         public Config keyboard(Keyboard keyboard) {
@@ -268,6 +282,11 @@ public class PinIn {
 
         public Config fU2V(boolean fU2V) {
             this.fU2V = fU2V;
+            return this;
+        }
+
+        public Config format(PinyinFormat format) {
+            this.format = format;
             return this;
         }
 
