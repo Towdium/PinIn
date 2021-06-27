@@ -17,7 +17,7 @@ public class PinIn {
     private final Cache<String, Pinyin> pinyins = new Cache<>(s -> new Pinyin(s, this, total++));
     private final Char[] chars = new Char[Character.MAX_VALUE];
     private final Char.Dummy temp = new Char.Dummy();
-    private final Accelerator acc;
+    private final ThreadLocal<Accelerator> acc;
 
     private Keyboard keyboard = Keyboard.QUANPIN;
     private int modification = 0;
@@ -40,7 +40,7 @@ public class PinIn {
     }
 
     public PinIn(DictLoader loader) {
-        acc = new Accelerator(this);
+        acc = ThreadLocal.withInitial(() -> new Accelerator(this));
         loader.load((c, ss) -> {
             if (ss == null) {
                 chars[c] = null;
@@ -56,25 +56,28 @@ public class PinIn {
 
     public boolean contains(String s1, String s2) {
         if (accelerate) {
-            acc.setProvider(s1);
-            acc.search(s2);
-            return acc.contains(0, 0);
+            Accelerator a = acc.get();
+            a.setProvider(s1);
+            a.search(s2);
+            return a.contains(0, 0);
         } else return Matcher.contains(s1, s2, this);
     }
 
     public boolean begins(String s1, String s2) {
         if (accelerate) {
-            acc.setProvider(s1);
-            acc.search(s2);
-            return acc.begins(0, 0);
+            Accelerator a = acc.get();
+            a.setProvider(s1);
+            a.search(s2);
+            return a.begins(0, 0);
         } else return Matcher.begins(s1, s2, this);
     }
 
     public boolean matches(String s1, String s2) {
         if (accelerate) {
-            acc.setProvider(s1);
-            acc.search(s2);
-            return acc.matches(0, 0);
+            Accelerator a = acc.get();
+            a.setProvider(s1);
+            a.search(s2);
+            return a.matches(0, 0);
         } else return Matcher.matches(s1, s2, this);
     }
 
