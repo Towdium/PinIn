@@ -96,6 +96,7 @@ public class PinInTest {
         String line;
         List<String> data = new ArrayList<>();
         InputStream is = PinInTest.class.getResourceAsStream(source + ".txt");
+        assert is != null;
         InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8);
         BufferedReader br = new BufferedReader(isr);
         while ((line = br.readLine()) != null) {
@@ -153,6 +154,11 @@ public class PinInTest {
         assert p.contains("hong2", "hong2");
         assert !p.begins("测", "ce4a");
         assert !p.begins("", "a");
+        assert p.contains("石头", "stou");
+        assert p.contains("安全", "aquan");
+        assert p.contains("昂扬", "ayang");
+        assert !p.contains("昂扬", "anyang");
+        assert p.contains("昂扬", "angyang");
     }
 
     @Test

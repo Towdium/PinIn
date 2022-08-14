@@ -201,7 +201,7 @@ public class PinIn {
             if (start1 == s1.length() - 1) {
                 int i = s2.length() - start2;
                 return s.get(i);
-            } else return !s.traverse(i -> !check(s1, start1 + 1, s2, start2 + i, p, partial));
+            } else return s.traverse(i -> check(s1, start1 + 1, s2, start2 + i, p, partial));
         }
     }
 

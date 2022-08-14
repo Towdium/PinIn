@@ -73,7 +73,7 @@ public class Accelerator {
         if (provider.end(start + 1)) {
             int i = searchStr.length() - offset;
             return s.get(i);
-        } else return !s.traverse(i -> !check(offset + i, start + 1));
+        } else return s.traverse(i -> check(offset + i, start + 1));
     }
 
     public boolean matches(int offset, int start) {

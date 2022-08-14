@@ -30,6 +30,15 @@ public class Phoneme implements Element {
         return ret;
     }
 
+    public boolean matchSequence(char c) {
+        for (String str : strs) {
+            if (str.charAt(0) == c) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean isEmpty() {
         return strs.length == 1 && strs[0].isEmpty();
     }

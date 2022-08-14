@@ -57,22 +57,24 @@ public class Keyboard {
             {"chi", "ch"}, {"ci", "c"}, {"zhi", "zh"}, {"zi", "z"}, {"ri", "r"},
     }).collect(Collectors.toMap(d -> d[0], d -> d[1]));
 
-    public static Keyboard QUANPIN = new Keyboard(null, null, Keyboard::standard, false);
-    public static Keyboard DAQIAN = new Keyboard(PHONETIC_LOCAL, DAQIAN_KEYS, Keyboard::standard, false);
-    public static Keyboard XIAOHE = new Keyboard(null, XIAOHE_KEYS, Keyboard::zero, true);
-    public static Keyboard ZIRANMA = new Keyboard(null, ZIRANMA_KEYS, Keyboard::zero, true);
+    public static Keyboard QUANPIN = new Keyboard(null, null, Keyboard::standard, false, true);
+    public static Keyboard DAQIAN = new Keyboard(PHONETIC_LOCAL, DAQIAN_KEYS, Keyboard::standard, false, false);
+    public static Keyboard XIAOHE = new Keyboard(null, XIAOHE_KEYS, Keyboard::zero, true, false);
+    public static Keyboard ZIRANMA = new Keyboard(null, ZIRANMA_KEYS, Keyboard::zero, true, false);
 
     final Map<String, String> local;
     final Map<String, String> keys;
     final Function<String, Collection<String>> cutter;
     public final boolean duo;
+    public final boolean sequence;
 
     public Keyboard(Map<String, String> local, Map<String, String> keys,
-                    Function<String, Collection<String>> cutter, boolean duo) {
+                    Function<String, Collection<String>> cutter, boolean duo, boolean sequence) {
         this.local = local;
         this.keys = keys;
         this.cutter = cutter;
         this.duo = duo;
+        this.sequence = sequence;
     }
 
     public static List<String> standard(String s) {

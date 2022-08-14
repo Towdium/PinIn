@@ -32,17 +32,17 @@ public class IndexSet {
     }
 
     public void merge(IndexSet s) {
-        value = value == 0x1 ? s.value : (value |= s.value);
+        value = value == 0x1 ? s.value : (value | s.value);
     }
 
     public boolean traverse(IntPredicate p) {
         int v = value;
         for (int i = 0; i < 7; i++) {
-            if ((v & 0x1) == 0x1 && !p.test(i)) return false;
-            else if (v == 0) return true;
+            if ((v & 0x1) == 0x1 && p.test(i)) return true;
+            else if (v == 0) return false;
             v >>= 1;
         }
-        return true;
+        return false;
     }
 
     public void foreach(IntConsumer c) {
@@ -61,10 +61,9 @@ public class IndexSet {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        traverse(i -> {
+        foreach(i -> {
             builder.append(i);
             builder.append(", ");
-            return true;
         });
         if (builder.length() != 0) {
             builder.delete(builder.length() - 2, builder.length());
@@ -103,6 +102,7 @@ public class IndexSet {
 
         public void set(IndexSet is, int index) {
             if (index >= data.length) {
+                // here we get the smallest power of 2 that is larger than index
                 int size = index;
                 size |= size >> 1;
                 size |= size >> 2;
