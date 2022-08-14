@@ -20,7 +20,6 @@ shadowJar {
     exclude 'it/unimi/dsi/fastutil/bytes/**'
     exclude 'it/unimi/dsi/fastutil/booleans/**'
     exclude 'it/unimi/dsi/fastutil/ints/*Map*'
-    exclude 'it/unimi/dsi/fastutil/objects/*List*'
     exclude 'it/unimi/dsi/fastutil/objects/*2Short*Map*'
     exclude 'it/unimi/dsi/fastutil/objects/*2Reference*Map*'
     exclude 'it/unimi/dsi/fastutil/objects/*2Long*Map*'
