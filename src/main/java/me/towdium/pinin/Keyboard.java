@@ -57,10 +57,73 @@ public class Keyboard {
             {"chi", "ch"}, {"ci", "c"}, {"zhi", "zh"}, {"zi", "z"}, {"ri", "r"},
     }).collect(Collectors.toMap(d -> d[0], d -> d[1]));
 
+    private static Map<String, String> SOUGOU_KEYS = Stream.of(new String[][]{
+            {"ai", "l"}, {"an", "j"}, {"ang", "h"}, {"ao", "k"}, {"ch", "i"},
+            {"ei", "z"}, {"en", "f"}, {"eng", "g"}, {"ia", "w"}, {"ian", "m"},
+            {"iang", "d"}, {"iao", "c"}, {"ie", "x"}, {"in", "n"}, {"ing", ";"},
+            {"iong", "s"}, {"iu", "q"}, {"ong", "s"}, {"ou", "b"}, {"sh", "u"},
+            {"ua", "w"}, {"uai", "y"}, {"uan", "r"}, {"uang", "d"}, {"ui", "v"},
+            {"un", "p"}, {"uo", "o"}, {"ve", "t"}, {"ue", "t"}, {"v", "y"},
+            {"zh", "v"}
+    }).collect(Collectors.toMap(d -> d[0], d -> d[1]));
+
+    private static Map<String, String> ZHINENG_ABC_KEYS = Stream.of(new String[][]{
+            {"ai", "l"}, {"an", "j"}, {"ang", "h"}, {"ao", "k"}, {"ch", "e"},
+            {"ei", "q"}, {"en", "f"}, {"eng", "g"}, {"er", "r"}, {"ia", "d"},
+            {"ian", "w"}, {"iang", "t"}, {"iao", "z"}, {"ie", "x"}, {"in", "c"},
+            {"ing", "y"}, {"iong", "s"}, {"iu", "r"}, {"ong", "s"}, {"ou", "b"},
+            {"sh", "v"}, {"ua", "d"}, {"uai", "c"}, {"uan", "p"}, {"uang", "t"},
+            {"ui", "m"}, {"un", "n"}, {"uo", "o"}, {"ve", "v"}, {"ue", "m"},
+            {"zh", "a"},
+    }).collect(Collectors.toMap(d -> d[0], d -> d[1]));
+
+    private static Map<String, String> GUOBIAO_KEYS = Stream.of(new String[][]{
+            {"ai", "k"}, {"an", "f"}, {"ang", "g"}, {"ao", "c"}, {"ch", "i"},
+            {"ei", "b"}, {"en", "r"}, {"eng", "h"}, {"er", "l"}, {"ia", "q"},
+            {"ian", "d"}, {"iang", "n"}, {"iao", "m"}, {"ie", "t"}, {"in", "l"},
+            {"ing", "j"}, {"iong", "s"}, {"iu", "y"}, {"ong", "s"}, {"ou", "p"},
+            {"sh", "u"}, {"ua", "q"}, {"uai", "y"}, {"uan", "w"}, {"uang", "n"},
+            {"ui", "v"}, {"un", "z"}, {"uo", "o"}, {"van", "w"}, {"ve", "x"},
+            {"vn", "z"}, {"zh", "v"},
+    }).collect(Collectors.toMap(d -> d[0], d -> d[1]));
+
+    private static Map<String, String> MICROSOFT_KEYS = Stream.of(new String[][]{
+            {"ai", "l"}, {"an", "j"}, {"ang", "h"}, {"ao", "k"}, {"ch", "i"},
+            {"ei", "z"}, {"en", "f"}, {"eng", "g"}, {"er", "r"}, {"ia", "w"},
+            {"ian", "m"}, {"iang", "d"}, {"iao", "c"}, {"ie", "x"}, {"in", "n"},
+            {"ing", ";"}, {"iong", "s"}, {"iu", "q"}, {"ong", "s"}, {"ou", "b"},
+            {"sh", "u"}, {"ua", "w"}, {"uai", "y"}, {"uan", "r"}, {"uang", "d"},
+            {"ui", "v"}, {"un", "p"}, {"uo", "o"}, {"ve", "v"}, {"ue", "t"},
+            {"v", "y"}, {"zh", "v"}
+    }).collect(Collectors.toMap(d -> d[0], d -> d[1]));
+
+    private static Map<String, String> PINYINPP_KEYS = Stream.of(new String[][]{
+            {"ai", "s"}, {"an", "f"}, {"ang", "g"}, {"ao", "d"}, {"ch", "u"},
+            {"ei", "w"}, {"en", "r"}, {"eng", "t"}, {"er", "q"}, {"ia", "b"},
+            {"ian", "j"}, {"iang", "h"}, {"iao", "k"}, {"ie", "m"}, {"in", "l"},
+            {"ing", "q"}, {"iong", "y"}, {"iu", "n"}, {"ong", "y"}, {"ou", "p"},
+            {"ua", "b"}, {"uai", "x"}, {"uan", "c"}, {"uang", "h"}, {"ue", "x"},
+            {"ui", "v"}, {"un", "z"}, {"uo", "o"}, {"sh", "i"}, {"zh", "v"}
+    }).collect(Collectors.toMap(d -> d[0], d -> d[1]));
+
+    private static Map<String, String> ZIGUANG_KEYS = Stream.of(new String[][]{
+            {"ai", "p"}, {"an", "r"}, {"ang", "s"}, {"ao", "q"}, {"ch", "a"},
+            {"ei", "k"}, {"en", "w"}, {"eng", "t"}, {"er", "j"}, {"ia", "x"},
+            {"ian", "f"}, {"iang", "g"}, {"iao", "b"}, {"ie", "d"}, {"in", "y"},
+            {"ing", ";"}, {"iong", "h"}, {"iu", "j"}, {"ong", "h"}, {"ou", "z"},
+            {"ua", "x"}, {"uan", "l"}, {"uai", "y"}, {"uang", "g"}, {"ue", "n"},
+            {"un", "m"}, {"uo", "o"}, {"ve", "n"}, {"sh", "i"}, {"zh", "u"},
+    }).collect(Collectors.toMap(d -> d[0], d -> d[1]));
+
     public static Keyboard QUANPIN = new Keyboard(null, null, Keyboard::standard, false, true);
     public static Keyboard DAQIAN = new Keyboard(PHONETIC_LOCAL, DAQIAN_KEYS, Keyboard::standard, false, false);
     public static Keyboard XIAOHE = new Keyboard(null, XIAOHE_KEYS, Keyboard::zero, true, false);
     public static Keyboard ZIRANMA = new Keyboard(null, ZIRANMA_KEYS, Keyboard::zero, true, false);
+    public static Keyboard SOUGOU = new Keyboard(null, SOUGOU_KEYS, Keyboard::zero, true, false);
+    public static Keyboard GUOBIAO = new Keyboard(null, GUOBIAO_KEYS, Keyboard::zero, true, false);
+    public static Keyboard MICROSOFT = new Keyboard(null, MICROSOFT_KEYS, Keyboard::zero, true, false);
+    public static Keyboard PINYINPP = new Keyboard(null, PINYINPP_KEYS, Keyboard::zero, true, false);
+    public static Keyboard ZIGUANG = new Keyboard(null, ZIGUANG_KEYS, Keyboard::zero, true, false);
 
     final Map<String, String> local;
     final Map<String, String> keys;
@@ -95,7 +158,7 @@ public class Keyboard {
         // tone
         ret.add(s.substring(s.length() - 1));
 
-        return  ret;
+        return ret;
     }
 
     public String keys(String s) {
