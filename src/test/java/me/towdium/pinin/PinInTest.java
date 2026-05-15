@@ -181,9 +181,10 @@ public class PinInTest {
         assert p.contains("测试文本", "ceuiwfbf");
         assert p.contains("测试文本", "ceuiwf2");
         assert !p.contains("测试文本", "ceuiw2");
-        assert p.contains("合金炉", "hej");
+        assert !p.contains("合金炉", "hej");
         assert p.contains("洗矿场", "xikl4");
         assert p.contains("月球", "ytqq");
+        assert p.contains("昂撒人", "ahsarf");
     }
 
     @Test
@@ -192,10 +193,84 @@ public class PinInTest {
         assert p.contains("测试文本", "ceuiwfbf");
         assert p.contains("测试文本", "ceuiwf2");
         assert !p.contains("测试文本", "ceuiw2");
-        assert p.contains("合金炉", "hej");
+        assert !p.contains("合金炉", "hej");
         assert p.contains("洗矿场", "xikd4");
         assert p.contains("月球", "ytqq");
         assert p.contains("安全", "anqr");
+        assert p.contains("昂撒人", "ahsarf");
+    }
+
+    @Test
+    public void sougou() {
+        PinIn p = new PinIn().config().keyboard(SOUGOU).commit();
+        assert p.contains("测试文本", "ceuiwfbf");
+        assert p.contains("测试文本", "ceuiwf2");
+        assert !p.contains("测试文本", "ceuiw2");
+        assert !p.contains("合金炉", "hej");
+        assert p.contains("洗矿场", "xikd4");
+        assert p.contains("月球", "ytqq");
+        assert p.contains("安全", "ojqr");
+    }
+
+    @Test
+    public void zhineng_abc() {
+        PinIn p = new PinIn().config().keyboard(ZHINENG_ABC).commit();
+        assert p.contains("测试文本", "ceviwfbf");
+        assert p.contains("测试文本", "ceviwf2");
+        assert !p.contains("测试文本", "ceviw2");
+        assert !p.contains("合金炉", "hej");
+        assert p.contains("洗矿场", "xikt4");
+        assert p.contains("月球", "ymqr");
+        assert p.contains("安全", "ojqp");
+    }
+
+    @Test
+    public void guobiao() {
+        PinIn p = new PinIn().config().keyboard(GUOBIAO).commit();
+        assert p.contains("测试文本", "ceuiwrbr");
+        assert p.contains("测试文本", "ceuiwr2");
+        assert !p.contains("测试文本", "ceuiw2");
+        assert !p.contains("合金炉", "hej");
+        assert p.contains("洗矿场", "xikn4");
+        assert p.contains("月球", "yxqy");
+        assert p.contains("安全", "afqw");
+    }
+
+    @Test
+    public void microsoft() {
+        PinIn p = new PinIn().config().keyboard(MICROSOFT).commit();
+        assert p.contains("测试文本", "ceuiwfbf");
+        assert p.contains("测试文本", "ceuiwf2");
+        assert !p.contains("测试文本", "ceuiw2");
+        assert !p.contains("合金炉", "hej");
+        assert p.contains("洗矿场", "xikd4");
+        assert p.contains("月球", "ytqq");
+        assert p.contains("安全", "ojqr");
+    }
+
+    @Test
+    public void pinyinpp() {
+        PinIn p = new PinIn().config().keyboard(PINYINPP).commit();
+        assert p.contains("测试文本", "ceiiwrbr");
+        assert p.contains("测试文本", "ceiiwr2");
+        assert !p.contains("测试文本", "ceiiw2");
+        assert !p.contains("合金炉", "hej");
+        assert p.contains("洗矿场", "xikh4");
+        assert p.contains("月球", "yxqn");
+        assert p.contains("安全", "anqc");
+        assert p.contains("昂撒人", "agsarr");
+    }
+
+    @Test
+    public void ziguang() {
+        PinIn p = new PinIn().config().keyboard(ZIGUANG).commit();
+        assert p.contains("测试文本", "ceiiwwbw");
+        assert p.contains("测试文本", "ceiiww2");
+        assert !p.contains("测试文本", "ceiiw2");
+        assert !p.contains("合金炉", "hej");
+        assert p.contains("洗矿场", "xikg4");
+        assert p.contains("月球", "ynqj");
+        assert p.contains("安全", "orql");
     }
 
     @Test

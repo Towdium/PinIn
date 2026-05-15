@@ -84,7 +84,7 @@ public class Keyboard {
             {"ing", "j"}, {"iong", "s"}, {"iu", "y"}, {"ong", "s"}, {"ou", "p"},
             {"sh", "u"}, {"ua", "q"}, {"uai", "y"}, {"uan", "w"}, {"uang", "n"},
             {"ui", "v"}, {"un", "z"}, {"uo", "o"}, {"van", "w"}, {"ve", "x"},
-            {"vn", "z"}, {"zh", "v"},
+            {"ue", "x"}, {"vn", "z"}, {"zh", "v"},
     }).collect(Collectors.toMap(d -> d[0], d -> d[1]));
 
     private static Map<String, String> MICROSOFT_KEYS = Stream.of(new String[][]{
@@ -119,11 +119,12 @@ public class Keyboard {
     public static Keyboard DAQIAN = new Keyboard(PHONETIC_LOCAL, DAQIAN_KEYS, Keyboard::standard, false, false);
     public static Keyboard XIAOHE = new Keyboard(null, XIAOHE_KEYS, Keyboard::zero, true, false);
     public static Keyboard ZIRANMA = new Keyboard(null, ZIRANMA_KEYS, Keyboard::zero, true, false);
-    public static Keyboard SOUGOU = new Keyboard(null, SOUGOU_KEYS, Keyboard::zero, true, false);
-    public static Keyboard GUOBIAO = new Keyboard(null, GUOBIAO_KEYS, Keyboard::zero, true, false);
-    public static Keyboard MICROSOFT = new Keyboard(null, MICROSOFT_KEYS, Keyboard::zero, true, false);
+    public static Keyboard SOUGOU = new Keyboard(null, SOUGOU_KEYS, Keyboard::zeroOInitial, true, false);
+    public static Keyboard ZHINENG_ABC = new Keyboard(null, ZHINENG_ABC_KEYS, Keyboard::zeroOInitial, true, false);
+    public static Keyboard GUOBIAO = new Keyboard(null, GUOBIAO_KEYS, Keyboard::zeroAInitial, true, false);
+    public static Keyboard MICROSOFT = new Keyboard(null, MICROSOFT_KEYS, Keyboard::zeroOInitial, true, false);
     public static Keyboard PINYINPP = new Keyboard(null, PINYINPP_KEYS, Keyboard::zero, true, false);
-    public static Keyboard ZIGUANG = new Keyboard(null, ZIGUANG_KEYS, Keyboard::zero, true, false);
+    public static Keyboard ZIGUANG = new Keyboard(null, ZIGUANG_KEYS, Keyboard::zeroOInitial, true, false);
 
     final Map<String, String> local;
     final Map<String, String> keys;
@@ -171,6 +172,22 @@ public class Keyboard {
             String finale = ss.get(0);
             ss.set(0, Character.toString(finale.charAt(0)));
             ss.add(1, finale.length() == 2 ? Character.toString(finale.charAt(1)) : finale);
+        }
+        return ss;
+    }
+
+    public static List<String> zeroOInitial(String s) {
+        List<String> ss = standard(s);
+        if (ss.size() == 2) {
+            ss.add(0,"o");
+        }
+        return ss;
+    }
+
+    public static List<String> zeroAInitial(String s) {
+        List<String> ss = standard(s);
+        if (ss.size() == 2) {
+            ss.add(0,"a");
         }
         return ss;
     }

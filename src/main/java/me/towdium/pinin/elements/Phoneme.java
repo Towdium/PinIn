@@ -56,7 +56,7 @@ public class Phoneme implements Element {
         if (strs.length == 1 && strs[0].isEmpty()) return ret;
         for (String str : strs) {
             int size = strCmp(source, str, start);
-            if (partial && start + size == source.length()) ret.set(size);  // ending match
+            if (partial && size != 0 && start + size == source.length()) ret.set(size);  // ending match
             else if (size == str.length()) ret.set(size); // full match
         }
         return ret;
